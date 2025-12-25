@@ -21,6 +21,14 @@
     "terminal.integrated.automationProfile.linux": {
         "shellPath": "/bin/bash"
     },
-    "terminal.integrated.automationProfile.windows": {}
+    "terminal.integrated.automationProfile.windows": {},
+    "terminal.integrated.defaultProfile.linux": "bash",
+    "terminal.integrated.enableImages": true,
+    "terminal.integrated.shellIntegration.decorationsEnabled": "overviewRuler",
+    "terminal.integrated.suggest.runOnEnter": "always",
+    "chat.useClaudeSkills": true,
+    "chat.useNestedAgentsMdFiles": true,
+    "containers.containerClient": "com.microsoft.visualstudio.containers.docker",
+    "containers.orchestratorClient": "com.microsoft.visualstudio.orchestrators.dockercompose"
 
 }

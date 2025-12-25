@@ -21,7 +21,7 @@
     "terminal.integrated.automationProfile.linux": {
         "shellPath": "/bin/bash"
     },
-    "terminal.integrated.automationProfile.windows": {},
+    "terminal.integrated.automationProfile.windows": null,
     "terminal.integrated.defaultProfile.linux": "bash",
     "terminal.integrated.enableImages": true,
     "terminal.integrated.shellIntegration.decorationsEnabled": "overviewRuler",

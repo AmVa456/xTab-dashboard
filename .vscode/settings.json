@@ -16,5 +16,11 @@
             },
             "username": "amva"
         }
+    },
+    "workbench.externalBrowser": "edge",
+    "terminal.integrated.automationProfile.linux": {
+        "shellPath": "/bin/bash",
+        
     }
+
 }

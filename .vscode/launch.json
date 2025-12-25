@@ -1,7 +1,42 @@
 {
     "configurations": [
         {
-            "type": "pwa-msedge",
+            "type": "node",
+            "request": "attach",
+            "name": "Containers: Attach to Node",
+            "remoteRoot": "/usr/src/app"
+        },
+        {
+            "args": [
+                "--extensionDevelopmentPath=${workspaceFolder}"
+            ],
+            "name": "Launch Extension",
+            "outFiles": [
+                "${workspaceFolder}/out/**/*.js"
+            ],
+            "preLaunchTask": "npm",
+            "request": "launch",
+            "type": "extensionHost"
+        },
+        {
+            "name": "Containers .NET Attach (Preview)",
+            "type": "docker",
+            "request": "attach",
+            "platform": "netCore",
+            "sourceFileMap": {
+                "/src": "${workspaceFolder}"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Run tsx",
+            "runtimeExecutable": "tsx",
+            "cwd": "${workspaceFolder}",
+            "args": []
+        },
+        {
+            "type": "msedge",
             "name": "Launch Microsoft Edge",
             "request": "launch",
             "runtimeArgs": [
@@ -13,7 +48,7 @@
             }
         },
         {
-            "type": "pwa-msedge",
+            "type": "msedge",
             "name": "Launch Microsoft Edge in headless mode",
             "request": "launch",
             "runtimeArgs": [
@@ -32,6 +67,17 @@
             "url": "c:\\Users\\amvar\\.vscode-insiders\\extensions\\ms-edgedevtools.vscode-edge-devtools-2.1.10\\out\\startpage\\index.html",
             "presentation": {
                 "hidden": true
+            }
+        },
+        {
+            "name": "Containers: Node.js Launch",
+            "type": "docker",
+            "request": "launch",
+            "preLaunchTask": "docker-run: debug",
+            "platform": "node",
+            "node": {
+                "package": "${workspaceFolder}/node_modules/ts-interface-checker/package.json",
+                "localRoot": "${workspaceFolder}/node_modules/ts-interface-checker"
             }
         }
     ],

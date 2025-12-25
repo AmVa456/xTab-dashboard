@@ -1,0 +1,10 @@
+services:
+  tsinterfacechecker:
+    image: tsinterfacechecker
+    build:
+      context: node_modules/ts-interface-checker
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+    ports:
+      - 3000:3000

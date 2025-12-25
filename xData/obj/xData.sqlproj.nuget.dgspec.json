@@ -1,0 +1,68 @@
+{
+  "format": 1,
+  "restore": {
+    "/workspaces/xTab-dasboard/xData/xData.sqlproj": {}
+  },
+  "projects": {
+    "/workspaces/xTab-dasboard/xData/xData.sqlproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/workspaces/xTab-dasboard/xData/xData.sqlproj",
+        "projectName": "xData",
+        "projectPath": "/workspaces/xTab-dasboard/xData/xData.sqlproj",
+        "packagesPath": "/home/codespace/.nuget/packages/",
+        "outputPath": "/workspaces/xTab-dasboard/xData/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/codespace/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "noWarn": [
+            "NU5128"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "dependencies": {
+            "Microsoft.SqlServer.Dacpacs.Msdb": {
+              "target": "Package",
+              "version": "[170.0.0, )",
+              "generatePathProperty": true
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.408/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

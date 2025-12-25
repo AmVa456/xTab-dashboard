@@ -1,0 +1,3 @@
+/workspaces/xTab-dasboard/xData/bin/Debug/xData.dacpac
+/workspaces/xTab-dasboard/xData/bin/Debug/msdb.dacpac
+/workspaces/xTab-dasboard/xData/obj/Debug/xData.sqlproj.Up2Date

@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "caHEi+2BMRU=",
+  "success": true,
+  "projectFilePath": "/workspaces/xTab-dasboard/xData/xData.sqlproj",
+  "expectedPackageFiles": [
+    "/home/codespace/.nuget/packages/microsoft.sqlserver.dacpacs.msdb/170.0.0/microsoft.sqlserver.dacpacs.msdb.170.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

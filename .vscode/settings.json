@@ -19,8 +19,8 @@
     },
     "workbench.externalBrowser": "edge",
     "terminal.integrated.automationProfile.linux": {
-        "shellPath": "/bin/bash",
-        
-    }
+        "shellPath": "/bin/bash"
+    },
+    "terminal.integrated.automationProfile.windows": {}
 
 }

@@ -6,6 +6,7 @@ import PostsTable from "@/components/dashboard/posts-table";
 import RecentActivity from "@/components/dashboard/recent-activity";
 import QuickActions from "@/components/dashboard/quick-actions";
 import PostForm from "@/components/forms/post-form";
+import StaticModeBanner from "@/components/dashboard/static-mode-banner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Post } from "@shared/schema";
 
@@ -41,6 +42,7 @@ export default function Dashboard() {
         <main className="flex-1 relative overflow-y-auto focus:outline-none">
           <div className="py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <StaticModeBanner />
               <StatsCards />
               
               <PostsTable 

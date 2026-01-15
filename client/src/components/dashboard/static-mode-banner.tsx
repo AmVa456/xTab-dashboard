@@ -2,8 +2,10 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function StaticModeBanner() {
-  // Check if we're likely in static mode (GitHub Pages)
-  const isGitHubPages = window.location.hostname.includes('github.io');
+  // Check if we're in static mode (GitHub Pages)
+  // Use endsWith to prevent URL substring attacks
+  const isGitHubPages = window.location.hostname.endsWith('.github.io') || 
+                        window.location.hostname === 'github.io';
   
   if (!isGitHubPages) {
     return null;

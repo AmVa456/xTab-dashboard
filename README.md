@@ -7,6 +7,12 @@ A modern, full-stack web application for managing posts across multiple social m
 ![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)
 ![Node.js](https://img.shields.io/badge/Node.js-43853D?logo=node.js&logoColor=white)
 
+## 🌐 Live Demo
+
+**Frontend Demo**: [https://amva456.github.io/xTab-dasboard/](https://amva456.github.io/xTab-dasboard/)
+
+> **Note**: The live demo is a static frontend-only version with sample data. For full functionality including backend features (create, edit, delete posts), see the [Full Deployment](#-full-deployment) section below.
+
 ## Features
 
 ✨ **Multi-Platform Management**
@@ -191,6 +197,85 @@ Currently uses in-memory storage for development. To integrate with a real datab
 3. Make your changes and commit: `git commit -m 'Add amazing feature'`
 4. Push to the branch: `git push origin feature/amazing-feature`
 5. Open a Pull Request
+
+## 🚀 Deployment
+
+### GitHub Pages (Frontend Only)
+
+The frontend is automatically deployed to GitHub Pages on every push to the `main` branch. The deployment:
+- Builds the React frontend with Vite
+- Deploys to `https://amva456.github.io/xTab-dasboard/`
+- Uses mock data for demonstration
+- Shows a banner indicating it's a static demo
+
+The GitHub Actions workflow is configured in `.github/workflows/deploy-frontend.yml`.
+
+### 🌟 Full Deployment
+
+For a complete deployment with backend functionality, you'll need:
+
+1. **Backend Hosting** (choose one):
+   - **Render**: 
+     - Create a new Web Service
+     - Connect your repository
+     - Build command: `npm install && npm run build`
+     - Start command: `npm start`
+     - Add environment variables (see below)
+   
+   - **Railway**:
+     - Create a new project from GitHub
+     - Railway auto-detects the build configuration
+     - Add environment variables
+   
+   - **Heroku**:
+     - Create a new app
+     - Connect to GitHub repository
+     - Enable automatic deploys from `main` branch
+
+2. **Database Setup**:
+   - Set up PostgreSQL (most platforms offer managed databases)
+   - Update `DATABASE_URL` in environment variables
+   - Run migrations: `npm run db:push`
+
+3. **Environment Variables**:
+   ```env
+   NODE_ENV=production
+   PORT=5000
+   DATABASE_URL=your_database_url
+   SESSION_SECRET=your_secret_key
+   ```
+
+4. **Domain Configuration**:
+   - Update the `base` path in `vite.config.ts` if deploying to a custom domain
+   - Remove or adjust the base path for root domain deployments
+
+### Local Development
+
+For local development with full backend support:
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server (includes both frontend and backend)
+npm run dev
+
+# Access at http://localhost:5000
+```
+
+### Production Build
+
+To build both frontend and backend for production:
+
+```bash
+npm run build
+```
+
+This creates:
+- Frontend: `dist/public/` (static files)
+- Backend: `dist/index.js` (Node.js server)
+
+
 
 ## License
 

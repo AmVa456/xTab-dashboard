@@ -59,7 +59,6 @@ A modern, full-stack web application for managing posts across multiple social m
 ### Backend
 - **Express.js** with TypeScript
 - **In-memory storage** with interface-based design
-- **Drizzle ORM** for type-safe database operations
 - **Zod** for runtime validation
 - **WebSocket** support for real-time updates
 
@@ -147,7 +146,6 @@ npm run dev          # Start development server
 npm run build        # Build for production
 npm run start        # Start production server
 npm run check        # Type check with TypeScript
-npm run db:push      # Push database schema (if using database)
 ```
 
 ### Environment Variables
@@ -186,9 +184,8 @@ The application uses Tailwind CSS with a custom design system:
 Currently uses in-memory storage for development. To integrate with a real database:
 
 1. Update the `IStorage` interface in `server/storage.ts`
-2. Implement database operations using Drizzle ORM
-3. Configure your database connection
-4. Run migrations with `npm run db:push`
+2. Implement database operations with your chosen database client
+3. Configure your database connection in the storage implementation
 
 ## Contributing
 
@@ -232,10 +229,10 @@ For a complete deployment with backend functionality, you'll need:
      - Connect to GitHub repository
      - Enable automatic deploys from `main` branch
 
-2. **Database Setup**:
-   - Set up PostgreSQL (most platforms offer managed databases)
-   - Update `DATABASE_URL` in environment variables
-   - Run migrations: `npm run db:push`
+2. **Database Setup** (Optional):
+   - Set up your preferred SQL database (PostgreSQL, MySQL, etc.)
+   - Update `DATABASE_URL` in environment variables if using a database
+   - Implement database operations in the storage layer
 
 3. **Environment Variables**:
    ```env

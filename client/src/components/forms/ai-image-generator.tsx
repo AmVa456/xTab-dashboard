@@ -224,7 +224,7 @@ export default function AIImageGenerator({
             {generatedImages.map((image, index) => (
               <Card
                 key={index}
-                className={`cursor-pointer transition-all hover:shadow-md ${
+                className={`cursor-pointer transition-all hover:shadow-md group ${
                   selectedIndex === index
                     ? "ring-2 ring-xtab-blue shadow-md"
                     : "opacity-70 hover:opacity-100"
@@ -262,7 +262,7 @@ export default function AIImageGenerator({
                     </div>
                   </div>
                   <div className="p-2 space-y-1">
-                    <p className="text-xs text-muted-foreground line-clamp-2">
+                    <p className="text-xs text-muted-foreground overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                       Style: {image.style || "Default"}
                     </p>
                     <p className="text-xs text-muted-foreground">

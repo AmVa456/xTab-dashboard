@@ -1,6 +1,9 @@
 /**
  * AI Service Module
  * Integrates with Google Gemini API and OpenAI DALL-E for AI-powered features
+ * 
+ * Note: Content filtering is disabled to allow maximum creative freedom.
+ * All safety settings are set to BLOCK_NONE for unfiltered AI responses.
  */
 
 import { z } from "zod";
@@ -71,7 +74,25 @@ async function callGeminiAPI(prompt: string): Promise<string> {
           parts: [{
             text: prompt
           }]
-        }]
+        }],
+        safetySettings: [
+          {
+            category: "HARM_CATEGORY_HARASSMENT",
+            threshold: "BLOCK_NONE"
+          },
+          {
+            category: "HARM_CATEGORY_HATE_SPEECH",
+            threshold: "BLOCK_NONE"
+          },
+          {
+            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            threshold: "BLOCK_NONE"
+          },
+          {
+            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+            threshold: "BLOCK_NONE"
+          }
+        ]
       }),
     });
 
@@ -210,7 +231,7 @@ Keep it concise but descriptive (100-200 words).`;
         quality: "standard",
       });
 
-      const imageUrl = dalleResponse.data[0]?.url;
+      const imageUrl = dalleResponse.data?.[0]?.url;
       
       result = {
         description,

@@ -1,9 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPostSchema } from "@shared/schema";
+import { insertPostSchema, hashtagSuggestionSchema } from "@shared/schema";
 import { z } from "zod";
 import * as aiService from "./ai-service";
+import { hashtagService } from "./hashtag-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Platform routes
@@ -242,6 +243,150 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Chat error:", error);
       res.status(500).json({ 
         message: error instanceof Error ? error.message : "Failed to process chat message" 
+      });
+    }
+  });
+
+  // Hashtag Intelligence endpoints
+  // Save hashtag suggestions for a post
+  app.post("/api/hashtags/suggestions", async (req, res) => {
+    if (!hashtagService.isEnabled()) {
+      return res.status(503).json({ 
+        message: "Hashtag service is not enabled. Configure MONGODB_URL to enable." 
+      });
+    }
+
+    try {
+      const validatedData = hashtagSuggestionSchema.parse(req.body);
+      const result = await hashtagService.saveSuggestions(validatedData);
+      
+      if (!result) {
+        return res.status(500).json({ message: "Failed to save hashtag suggestions" });
+      }
+      
+      res.status(201).json(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: error.errors 
+        });
+      }
+      console.error("Save hashtag suggestions error:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to save hashtag suggestions" 
+      });
+    }
+  });
+
+  // Get hashtag suggestions by post ID
+  app.get("/api/hashtags/suggestions/:postId", async (req, res) => {
+    if (!hashtagService.isEnabled()) {
+      return res.status(503).json({ 
+        message: "Hashtag service is not enabled. Configure MONGODB_URL to enable." 
+      });
+    }
+
+    try {
+      const suggestions = await hashtagService.getSuggestionsByPost(req.params.postId);
+      
+      if (!suggestions) {
+        return res.status(404).json({ message: "No suggestions found for this post" });
+      }
+      
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Get hashtag suggestions error:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to get hashtag suggestions" 
+      });
+    }
+  });
+
+  // Update hashtag selection status
+  app.put("/api/hashtags/suggestions/:suggestionId/select", async (req, res) => {
+    if (!hashtagService.isEnabled()) {
+      return res.status(503).json({ 
+        message: "Hashtag service is not enabled. Configure MONGODB_URL to enable." 
+      });
+    }
+
+    try {
+      const { hashtag, selected } = req.body;
+      
+      if (!hashtag || typeof selected !== 'boolean') {
+        return res.status(400).json({ 
+          message: "Invalid request. Requires 'hashtag' (string) and 'selected' (boolean)" 
+        });
+      }
+
+      const success = await hashtagService.updateSelection(
+        req.params.suggestionId,
+        hashtag,
+        selected
+      );
+      
+      if (!success) {
+        return res.status(500).json({ message: "Failed to update hashtag selection" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Update hashtag selection error:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to update hashtag selection" 
+      });
+    }
+  });
+
+  // Get trending hashtags
+  app.get("/api/hashtags/trending", async (req, res) => {
+    if (!hashtagService.isEnabled()) {
+      return res.status(503).json({ 
+        message: "Hashtag service is not enabled. Configure MONGODB_URL to enable." 
+      });
+    }
+
+    try {
+      const { platform, limit } = req.query;
+      const limitNum = limit ? parseInt(limit as string, 10) : 10;
+      
+      const trending = await hashtagService.getTrendingHashtags(
+        platform as string,
+        limitNum
+      );
+      
+      res.json({ hashtags: trending });
+    } catch (error) {
+      console.error("Get trending hashtags error:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to get trending hashtags" 
+      });
+    }
+  });
+
+  // Get hashtag analytics
+  app.get("/api/hashtags/analytics", async (req, res) => {
+    if (!hashtagService.isEnabled()) {
+      return res.status(503).json({ 
+        message: "Hashtag service is not enabled. Configure MONGODB_URL to enable." 
+      });
+    }
+
+    try {
+      const { platform, limit } = req.query;
+      const limitNum = limit ? parseInt(limit as string, 10) : 20;
+      
+      const analytics = await hashtagService.getHashtagAnalytics(
+        platform as string,
+        limitNum
+      );
+      
+      res.json({ analytics });
+    } catch (error) {
+      console.error("Get hashtag analytics error:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to get hashtag analytics" 
       });
     }
   });

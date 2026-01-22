@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { cacheService } from "./cache-service";
+import { hashtagService } from "./hashtag-service";
 
 const app = express();
 app.use(express.json());
@@ -41,6 +42,9 @@ app.use((req, res, next) => {
   // Initialize cache service
   await cacheService.initialize();
   
+  // Initialize hashtag service
+  await hashtagService.initialize();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -75,8 +79,9 @@ app.use((req, res, next) => {
 
   // Graceful shutdown
   process.on('SIGTERM', async () => {
-    log('SIGTERM signal received: closing cache connection');
+    log('SIGTERM signal received: closing connections');
     await cacheService.close();
+    await hashtagService.close();
     process.exit(0);
   });
 })();

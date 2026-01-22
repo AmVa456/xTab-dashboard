@@ -35,11 +35,16 @@ export interface SuggestHashtagsRequest {
   content: string;
   platform?: string;
   count?: number;
+  includeTrending?: boolean;
 }
 
 export interface SuggestHashtagsResponse {
-  hashtags: string[];
-  trending?: boolean[];
+  hashtags: Array<{
+    tag: string;
+    relevanceScore: number;
+    trending: boolean;
+    category: string;
+  }>;
 }
 
 export interface ChatRequest {
@@ -112,5 +117,90 @@ export function useAIChat() {
       const response = await apiRequest("POST", "/api/ai/chat", data);
       return response.json();
     },
+  });
+}
+
+/**
+ * Hook to save hashtag suggestions to MongoDB
+ */
+export function useSaveHashtagSuggestions() {
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", "/api/hashtags/suggestions", data);
+      return response.json();
+    },
+  });
+}
+
+/**
+ * Hook to get hashtag suggestions for a post
+ */
+export function useHashtagSuggestions(postId?: string) {
+  return useQuery({
+    queryKey: ["/api/hashtags/suggestions", postId],
+    queryFn: async () => {
+      if (!postId) return null;
+      const response = await apiRequest("GET", `/api/hashtags/suggestions/${postId}`);
+      return response.json();
+    },
+    enabled: !!postId,
+  });
+}
+
+/**
+ * Hook to update hashtag selection
+ */
+export function useUpdateHashtagSelection() {
+  return useMutation({
+    mutationFn: async ({ suggestionId, hashtag, selected }: { 
+      suggestionId: string; 
+      hashtag: string; 
+      selected: boolean;
+    }) => {
+      const response = await apiRequest(
+        "PUT", 
+        `/api/hashtags/suggestions/${suggestionId}/select`,
+        { hashtag, selected }
+      );
+      return response.json();
+    },
+  });
+}
+
+/**
+ * Hook to get trending hashtags
+ */
+export function useTrendingHashtags(platform?: string, limit?: number) {
+  return useQuery({
+    queryKey: ["/api/hashtags/trending", platform, limit],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (platform) params.append('platform', platform);
+      if (limit) params.append('limit', limit.toString());
+      
+      const url = `/api/hashtags/trending${params.toString() ? `?${params.toString()}` : ''}`;
+      const response = await apiRequest("GET", url);
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+}
+
+/**
+ * Hook to get hashtag analytics
+ */
+export function useHashtagAnalytics(platform?: string, limit?: number) {
+  return useQuery({
+    queryKey: ["/api/hashtags/analytics", platform, limit],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (platform) params.append('platform', platform);
+      if (limit) params.append('limit', limit.toString());
+      
+      const url = `/api/hashtags/analytics${params.toString() ? `?${params.toString()}` : ''}`;
+      const response = await apiRequest("GET", url);
+      return response.json();
+    },
+    staleTime: 10 * 60 * 1000, // Cache for 10 minutes
   });
 }

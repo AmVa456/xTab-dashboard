@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -6,7 +6,14 @@ import { z } from "zod";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useGenerateContent, useGenerateImage, useSuggestHashtags, useAIStatus } from "@/hooks/use-ai";
+import { 
+  useGenerateContent, 
+  useGenerateImage, 
+  useSuggestHashtags, 
+  useAIStatus,
+  useSaveHashtagSuggestions,
+  useUpdateHashtagSelection 
+} from "@/hooks/use-ai";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,6 +22,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Hash, Image as ImageIcon, Loader2, X } from "lucide-react";
+import HashtagSuggestions from "./hashtag-suggestions";
 import type { Post, Platform, InsertPost } from "@shared/schema";
 
 const postFormSchema = z.object({
@@ -28,6 +36,15 @@ const postFormSchema = z.object({
 
 type PostFormData = z.infer<typeof postFormSchema>;
 
+interface Hashtag {
+  tag: string;
+  relevanceScore: number;
+  trending: boolean;
+  category: string;
+  isAIGenerated?: boolean;
+  selected?: boolean;
+}
+
 interface PostFormProps {
   post?: Post | null;
   onSubmit: () => void;
@@ -37,8 +54,10 @@ interface PostFormProps {
 export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
   const { toast } = useToast();
   const isEditing = !!post;
-  const [suggestedHashtags, setSuggestedHashtags] = useState<string[]>([]);
+  const [suggestedHashtags, setSuggestedHashtags] = useState<Hashtag[]>([]);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string>("");
+  const [hashtagSuggestionId, setHashtagSuggestionId] = useState<string | null>(null);
+  const [contentDebounceTimer, setContentDebounceTimer] = useState<NodeJS.Timeout | null>(null);
 
   const { data: platforms = [] } = useQuery<Platform[]>({
     queryKey: ["/api/platforms"],
@@ -48,6 +67,8 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
   const generateContentMutation = useGenerateContent();
   const generateImageMutation = useGenerateImage();
   const suggestHashtagsMutation = useSuggestHashtags();
+  const saveHashtagSuggestions = useSaveHashtagSuggestions();
+  const updateHashtagSelection = useUpdateHashtagSelection();
 
   const form = useForm<PostFormData>({
     resolver: zodResolver(postFormSchema),
@@ -215,16 +236,18 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
     }
   };
 
-  const handleSuggestHashtags = async () => {
+  const handleSuggestHashtags = async (autoUpdate = false) => {
     const content = form.getValues("content");
     const platformId = form.getValues("platformId");
     
-    if (!content) {
-      toast({
-        title: "Content Required",
-        description: "Please enter content first to suggest hashtags",
-        variant: "destructive",
-      });
+    if (!content || content.length < 20) {
+      if (!autoUpdate) {
+        toast({
+          title: "Content Required",
+          description: "Please enter at least 20 characters of content to suggest hashtags",
+          variant: "destructive",
+        });
+      }
       return;
     }
 
@@ -233,29 +256,134 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
       const result = await suggestHashtagsMutation.mutateAsync({
         content,
         platform: platform?.name,
-        count: 5,
+        count: 8,
+        includeTrending: true,
       });
 
-      setSuggestedHashtags(result.hashtags);
-      toast({
-        title: "Hashtags Suggested",
-        description: `Generated ${result.hashtags.length} hashtag suggestions`,
-      });
+      // Transform the response to match our Hashtag interface
+      const hashtags: Hashtag[] = result.hashtags.map(h => ({
+        tag: h.tag,
+        relevanceScore: h.relevanceScore,
+        trending: h.trending,
+        category: h.category,
+        isAIGenerated: true,
+        selected: false,
+      }));
+
+      setSuggestedHashtags(hashtags);
+
+      // Save to MongoDB if hashtag service is available
+      try {
+        const savedSuggestion = await saveHashtagSuggestions.mutateAsync({
+          postId: post?.id,
+          content,
+          platform: platform?.name,
+          hashtags: hashtags.map(h => ({
+            tag: h.tag,
+            isAIGenerated: true,
+            relevanceScore: h.relevanceScore,
+            trending: h.trending,
+            selected: false,
+            selectionCount: 0,
+          })),
+        });
+
+        if (savedSuggestion?.id) {
+          setHashtagSuggestionId(savedSuggestion.id);
+        }
+      } catch (saveError) {
+        // MongoDB save failed, but we still have the suggestions
+        console.log("Failed to save hashtag suggestions to MongoDB:", saveError);
+      }
+
+      if (!autoUpdate) {
+        toast({
+          title: "Hashtags Suggested",
+          description: `Generated ${hashtags.length} intelligent hashtag suggestions`,
+        });
+      }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to suggest hashtags",
-        variant: "destructive",
-      });
+      if (!autoUpdate) {
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to suggest hashtags",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const addHashtagToContent = (hashtag: string) => {
+  // Real-time hashtag update based on content changes
+  const handleContentChange = useCallback((content: string) => {
+    // Clear existing timer
+    if (contentDebounceTimer) {
+      clearTimeout(contentDebounceTimer);
+    }
+
+    // Only auto-update if we already have suggestions and content is substantial
+    if (suggestedHashtags.length > 0 && content.length > 50) {
+      const timer = setTimeout(() => {
+        handleSuggestHashtags(true); // Auto-update without showing toast
+      }, 3000); // Wait 3 seconds after user stops typing
+
+      setContentDebounceTimer(timer);
+    }
+  }, [suggestedHashtags.length, contentDebounceTimer]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (contentDebounceTimer) {
+        clearTimeout(contentDebounceTimer);
+      }
+    };
+  }, [contentDebounceTimer]);
+
+  const handleHashtagClick = (hashtag: string) => {
     const currentContent = form.getValues("content");
+    // Check if hashtag already exists in content
+    if (currentContent.includes(hashtag)) {
+      toast({
+        title: "Already Added",
+        description: `${hashtag} is already in your content`,
+      });
+      return;
+    }
+
     const newContent = currentContent 
       ? `${currentContent}\n\n${hashtag}` 
       : hashtag;
     form.setValue("content", newContent);
+    
+    toast({
+      title: "Hashtag Added",
+      description: `${hashtag} added to your content`,
+    });
+  };
+
+  const handleHashtagSelect = async (hashtag: string, selected: boolean) => {
+    if (!hashtagSuggestionId) return;
+
+    try {
+      await updateHashtagSelection.mutateAsync({
+        suggestionId: hashtagSuggestionId,
+        hashtag,
+        selected,
+      });
+
+      // Update local state
+      setSuggestedHashtags(prev =>
+        prev.map(h =>
+          h.tag === hashtag ? { ...h, selected } : h
+        )
+      );
+    } catch (error) {
+      console.error("Failed to update hashtag selection:", error);
+    }
+  };
+
+  const addHashtagToContent = (hashtag: string) => {
+    handleHashtagClick(hashtag);
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
@@ -370,36 +498,15 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
             </div>
           )}
 
-          {/* Display suggested hashtags */}
+          {/* Display suggested hashtags with enhanced component */}
           {suggestedHashtags.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Suggested Hashtags</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSuggestedHashtags([])}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {suggestedHashtags.map((hashtag, index) => (
-                  <Badge
-                    key={index}
-                    variant="secondary"
-                    className="cursor-pointer hover:bg-xtab-blue hover:text-white transition-colors"
-                    onClick={() => addHashtagToContent(hashtag)}
-                  >
-                    {hashtag}
-                  </Badge>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Click on a hashtag to add it to your content
-              </p>
-            </div>
+            <HashtagSuggestions
+              hashtags={suggestedHashtags}
+              onHashtagClick={handleHashtagClick}
+              onHashtagSelect={handleHashtagSelect}
+              onDismiss={() => setSuggestedHashtags([])}
+              isLoading={suggestHashtagsMutation.isPending}
+            />
           )}
 
           <FormField
@@ -431,6 +538,10 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
                     placeholder="Write your post content..."
                     className="min-h-40"
                     {...field}
+                    onChange={(e) => {
+                      field.onChange(e);
+                      handleContentChange(e.target.value);
+                    }}
                     data-testid="input-post-content"
                   />
                 </FormControl>

@@ -192,11 +192,15 @@ Currently uses in-memory storage for development. To integrate with a real datab
 
 ## Contributing
 
+This project includes comprehensive [GitHub Copilot instructions](.github/copilot-instructions.md) to help AI assistants understand the codebase structure, conventions, and best practices.
+
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/amazing-feature`
 3. Make your changes and commit: `git commit -m 'Add amazing feature'`
 4. Push to the branch: `git push origin feature/amazing-feature`
 5. Open a Pull Request
+
+When using GitHub Copilot, the AI will automatically use the project-specific instructions to provide better suggestions aligned with our coding standards.
 
 ## 🚀 Deployment
 

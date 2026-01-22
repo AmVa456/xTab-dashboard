@@ -1,5 +1,15 @@
 # GitHub Copilot Instructions for xTab Dashboard
 
+## About These Instructions
+
+This repository includes comprehensive Copilot instructions organized by scope:
+- **This file**: General project guidelines applicable to all code
+- **client.instructions.md**: Frontend-specific instructions for React code in `client/`
+- **server.instructions.md**: Backend-specific instructions for Express code in `server/`
+- **shared.instructions.md**: Shared code instructions for schemas and types in `shared/`
+
+The setup workflow (`.github/workflows/copilot-setup-steps.yml`) ensures dependencies are installed before Copilot starts working.
+
 ## Project Overview
 
 xTab is a modern, full-stack social media post management dashboard built to manage posts across multiple platforms (Reddit, Twitter, LinkedIn, Medium, etc.). The application provides analytics, post scheduling, and multi-platform management capabilities.

@@ -183,6 +183,7 @@ The application uses Tailwind CSS with a custom design system:
 
 Currently uses in-memory storage for development. To integrate with a real database:
 
+1. Update the `IStorage` interface in `server/storage.ts`
 2. Implement database operations with your chosen database client
 3. Configure your database connection in the storage implementation
 

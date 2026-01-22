@@ -1,14 +1,20 @@
 /**
  * AI Service Module
- * Integrates with Google Gemini API for AI-powered features
+ * Integrates with Google Gemini API and OpenAI DALL-E for AI-powered features
  */
 
 import { z } from "zod";
+import OpenAI from "openai";
+import { cacheService } from "./cache-service";
 
 // Configuration
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const AI_FEATURES_ENABLED = process.env.AI_FEATURES_ENABLED === "true";
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+
+// Initialize OpenAI client
+const openai = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : null;
 
 // Validation schemas
 export const generateContentSchema = z.object({
@@ -102,6 +108,16 @@ export async function generateContent(request: GenerateContentRequest): Promise<
 }> {
   const { topic, platform, tone = "professional", length = "medium" } = request;
 
+  // Check cache first
+  const cached = await cacheService.get<{ content: string; title?: string; excerpt?: string }>(
+    "generate-content",
+    { topic, platform, tone, length }
+  );
+  
+  if (cached) {
+    return cached;
+  }
+
   const lengthMap = {
     short: "50-100 words",
     medium: "150-300 words",
@@ -125,28 +141,34 @@ Format your response as JSON:
 
   const response = await callGeminiAPI(prompt);
   
+  let result: { content: string; title?: string; excerpt?: string };
+  
   try {
     // Try to parse JSON response
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
-      return {
+      result = {
         title: parsed.title || "",
         excerpt: parsed.excerpt || "",
         content: parsed.content || response,
       };
+    } else {
+      result = { content: response };
     }
   } catch (e) {
     // Fallback: return raw response as content
+    result = { content: response };
   }
 
-  return {
-    content: response,
-  };
+  // Cache the result for 1 hour
+  await cacheService.set("generate-content", { topic, platform, tone, length }, result, 3600);
+
+  return result;
 }
 
 /**
- * Generate image description/concept for AI image generation
+ * Generate image using DALL-E or fallback to prompt generation
  */
 export async function generateImage(request: GenerateImageRequest): Promise<{
   description: string;
@@ -155,21 +177,70 @@ export async function generateImage(request: GenerateImageRequest): Promise<{
 }> {
   const { description, style = "modern and professional" } = request;
 
-  const prompt = `Generate a detailed image prompt for an AI image generator based on this description: "${description}". 
+  // Check cache first
+  const cached = await cacheService.get<{ description: string; prompt: string; imageUrl?: string }>(
+    "generate-image",
+    { description, style }
+  );
+  
+  if (cached) {
+    return cached;
+  }
+
+  // Generate image prompt using Gemini
+  const promptText = `Generate a detailed image prompt for an AI image generator based on this description: "${description}". 
 The style should be: ${style}.
 
 Provide a detailed, descriptive prompt that would work well with image generation AI tools like DALL-E or Midjourney.
 Keep it concise but descriptive (100-200 words).`;
 
-  const imagePrompt = await callGeminiAPI(prompt);
+  const imagePrompt = await callGeminiAPI(promptText);
 
-  return {
-    description,
-    prompt: imagePrompt,
-    // Note: Actual image generation would require DALL-E or similar API
-    // For now, we return a placeholder
-    imageUrl: `https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=${encodeURIComponent(description.slice(0, 50))}`,
-  };
+  let result: { description: string; prompt: string; imageUrl?: string };
+
+  // Try to use DALL-E if configured
+  if (openai && OPENAI_API_KEY) {
+    try {
+      console.log("Generating image with DALL-E...");
+      const dalleResponse = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: imagePrompt,
+        n: 1,
+        size: "1024x1024",
+        quality: "standard",
+      });
+
+      const imageUrl = dalleResponse.data[0]?.url;
+      
+      result = {
+        description,
+        prompt: imagePrompt,
+        imageUrl: imageUrl || `https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=${encodeURIComponent(description.slice(0, 50))}`,
+      };
+      
+      console.log("DALL-E image generated successfully");
+    } catch (error) {
+      console.error("DALL-E generation failed, using placeholder:", error);
+      result = {
+        description,
+        prompt: imagePrompt,
+        imageUrl: `https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=${encodeURIComponent(description.slice(0, 50))}`,
+      };
+    }
+  } else {
+    // Fallback to placeholder if DALL-E not configured
+    console.log("DALL-E not configured, using placeholder image");
+    result = {
+      description,
+      prompt: imagePrompt,
+      imageUrl: `https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=${encodeURIComponent(description.slice(0, 50))}`,
+    };
+  }
+
+  // Cache the result for 24 hours (images are expensive)
+  await cacheService.set("generate-image", { description, style }, result, 86400);
+
+  return result;
 }
 
 /**
@@ -180,6 +251,16 @@ export async function suggestHashtags(request: SuggestHashtagsRequest): Promise<
   trending?: boolean[];
 }> {
   const { content, platform, count = 5 } = request;
+
+  // Check cache first
+  const cached = await cacheService.get<{ hashtags: string[]; trending?: boolean[] }>(
+    "suggest-hashtags",
+    { content: content.slice(0, 200), platform, count } // Cache by content snippet to avoid huge keys
+  );
+  
+  if (cached) {
+    return cached;
+  }
 
   const prompt = `Analyze this social media post and suggest ${count} relevant, popular hashtags${platform ? ` for ${platform}` : ""}.
 
@@ -204,9 +285,14 @@ contentcreation`;
     .filter(tag => tag.length > 0 && tag.length < 50)
     .slice(0, count);
 
-  return {
+  const result = {
     hashtags: hashtags.map(tag => `#${tag}`),
   };
+
+  // Cache for 6 hours
+  await cacheService.set("suggest-hashtags", { content: content.slice(0, 200), platform, count }, result, 21600);
+
+  return result;
 }
 
 /**
@@ -217,6 +303,16 @@ export async function chat(request: ChatRequest): Promise<{
   suggestions?: string[];
 }> {
   const { message, context } = request;
+
+  // Check cache for common questions (cache by message only, not context)
+  const cached = await cacheService.get<{ response: string; suggestions?: string[] }>(
+    "chat",
+    { message }
+  );
+  
+  if (cached && !context) { // Only use cache if no specific context
+    return cached;
+  }
 
   const systemContext = context 
     ? `\n\nContext: ${context}`
@@ -241,8 +337,15 @@ Provide a helpful, actionable response. If relevant, include 2-3 specific sugges
     });
   }
 
-  return {
+  const result = {
     response,
     suggestions: suggestions.length > 0 ? suggestions : undefined,
   };
+
+  // Cache common questions for 12 hours (only if no context)
+  if (!context) {
+    await cacheService.set("chat", { message }, result, 43200);
+  }
+
+  return result;
 }

@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { cacheService } from "./cache-service";
 
 const app = express();
 app.use(express.json());
@@ -37,6 +38,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize cache service
+  await cacheService.initialize();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -67,5 +71,12 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+  });
+
+  // Graceful shutdown
+  process.on('SIGTERM', async () => {
+    log('SIGTERM signal received: closing cache connection');
+    await cacheService.close();
+    process.exit(0);
   });
 })();

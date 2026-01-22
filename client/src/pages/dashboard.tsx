@@ -5,7 +5,7 @@ import StatsCards from "@/components/dashboard/stats-cards";
 import PostsTable from "@/components/dashboard/posts-table";
 import RecentActivity from "@/components/dashboard/recent-activity";
 import QuickActions from "@/components/dashboard/quick-actions";
-import PostForm from "@/components/forms/post-form";
+import AIPostComposer from "@/components/forms/ai-post-composer";
 import AIAssistant from "@/components/dashboard/ai-assistant";
 import StaticModeBanner from "@/components/dashboard/static-mode-banner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -107,7 +107,7 @@ export default function Dashboard() {
 
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <PostForm 
+          <AIPostComposer 
             onSubmit={() => setShowCreateModal(false)}
             onCancel={() => setShowCreateModal(false)}
           />
@@ -116,7 +116,7 @@ export default function Dashboard() {
 
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <PostForm 
+          <AIPostComposer 
             post={selectedPost}
             onSubmit={() => {
               setShowEditModal(false);

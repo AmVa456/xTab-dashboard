@@ -35,6 +35,7 @@ export const posts = pgTable("posts", {
   publishedAt: timestamp("published_at"),
   createdAt: timestamp("created_at").default(sql`now()`),
   updatedAt: timestamp("updated_at").default(sql`now()`),
+  aiMetadata: jsonb("ai_metadata"), // AI-generated metadata
 });
 
 export const insertPlatformSchema = createInsertSchema(platforms).omit({
@@ -51,3 +52,23 @@ export type InsertPlatform = z.infer<typeof insertPlatformSchema>;
 export type Platform = typeof platforms.$inferSelect;
 export type InsertPost = z.infer<typeof insertPostSchema>;
 export type Post = typeof posts.$inferSelect;
+
+// AI Metadata schema
+export const aiMetadataSchema = z.object({
+  isAIGenerated: z.boolean().optional(),
+  tone: z.enum(["professional", "casual", "friendly", "formal", "humorous"]).optional(),
+  generatedAt: z.string().optional(),
+  originalPrompt: z.string().optional(),
+  modifications: z.array(z.object({
+    type: z.string(),
+    timestamp: z.string(),
+    description: z.string(),
+  })).optional(),
+  qualityScores: z.object({
+    grammar: z.number().optional(),
+    engagement: z.number().optional(),
+    originality: z.number().optional(),
+  }).optional(),
+});
+
+export type AIMetadata = z.infer<typeof aiMetadataSchema>;

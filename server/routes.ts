@@ -246,6 +246,188 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Adjust tone
+  app.post("/api/ai/adjust-tone", async (req, res) => {
+    if (!aiService.isAIEnabled()) {
+      return res.status(503).json({ 
+        message: "AI features are not enabled. Configure GEMINI_API_KEY and set AI_FEATURES_ENABLED=true." 
+      });
+    }
+
+    try {
+      const validatedData = aiService.adjustToneSchema.parse(req.body);
+      const result = await aiService.adjustTone(validatedData);
+      res.json(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: error.errors 
+        });
+      }
+      console.error("Adjust tone error:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to adjust tone" 
+      });
+    }
+  });
+
+  // Check grammar
+  app.post("/api/ai/check-grammar", async (req, res) => {
+    if (!aiService.isAIEnabled()) {
+      return res.status(503).json({ 
+        message: "AI features are not enabled. Configure GEMINI_API_KEY and set AI_FEATURES_ENABLED=true." 
+      });
+    }
+
+    try {
+      const validatedData = aiService.checkGrammarSchema.parse(req.body);
+      const result = await aiService.checkGrammar(validatedData);
+      res.json(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: error.errors 
+        });
+      }
+      console.error("Check grammar error:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to check grammar" 
+      });
+    }
+  });
+
+  // Analyze engagement
+  app.post("/api/ai/analyze-engagement", async (req, res) => {
+    if (!aiService.isAIEnabled()) {
+      return res.status(503).json({ 
+        message: "AI features are not enabled. Configure GEMINI_API_KEY and set AI_FEATURES_ENABLED=true." 
+      });
+    }
+
+    try {
+      const validatedData = aiService.analyzeEngagementSchema.parse(req.body);
+      const result = await aiService.analyzeEngagement(validatedData);
+      res.json(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: error.errors 
+        });
+      }
+      console.error("Analyze engagement error:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to analyze engagement" 
+      });
+    }
+  });
+
+  // Generate headline
+  app.post("/api/ai/generate-headline", async (req, res) => {
+    if (!aiService.isAIEnabled()) {
+      return res.status(503).json({ 
+        message: "AI features are not enabled. Configure GEMINI_API_KEY and set AI_FEATURES_ENABLED=true." 
+      });
+    }
+
+    try {
+      const validatedData = aiService.generateHeadlineSchema.parse(req.body);
+      const result = await aiService.generateHeadline(validatedData);
+      res.json(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: error.errors 
+        });
+      }
+      console.error("Generate headline error:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to generate headline" 
+      });
+    }
+  });
+
+  // Generate summary
+  app.post("/api/ai/generate-summary", async (req, res) => {
+    if (!aiService.isAIEnabled()) {
+      return res.status(503).json({ 
+        message: "AI features are not enabled. Configure GEMINI_API_KEY and set AI_FEATURES_ENABLED=true." 
+      });
+    }
+
+    try {
+      const validatedData = aiService.generateSummarySchema.parse(req.body);
+      const result = await aiService.generateSummary(validatedData);
+      res.json(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: error.errors 
+        });
+      }
+      console.error("Generate summary error:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to generate summary" 
+      });
+    }
+  });
+
+  // Generate CTA
+  app.post("/api/ai/generate-cta", async (req, res) => {
+    if (!aiService.isAIEnabled()) {
+      return res.status(503).json({ 
+        message: "AI features are not enabled. Configure GEMINI_API_KEY and set AI_FEATURES_ENABLED=true." 
+      });
+    }
+
+    try {
+      const validatedData = aiService.generateCTASchema.parse(req.body);
+      const result = await aiService.generateCTA(validatedData);
+      res.json(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: error.errors 
+        });
+      }
+      console.error("Generate CTA error:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to generate CTA" 
+      });
+    }
+  });
+
+  // Optimize post
+  app.post("/api/ai/optimize-post", async (req, res) => {
+    if (!aiService.isAIEnabled()) {
+      return res.status(503).json({ 
+        message: "AI features are not enabled. Configure GEMINI_API_KEY and set AI_FEATURES_ENABLED=true." 
+      });
+    }
+
+    try {
+      const validatedData = aiService.optimizePostSchema.parse(req.body);
+      const result = await aiService.optimizePost(validatedData);
+      res.json(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: error.errors 
+        });
+      }
+      console.error("Optimize post error:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to optimize post" 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

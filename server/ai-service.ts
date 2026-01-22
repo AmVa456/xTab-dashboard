@@ -16,6 +16,14 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const AI_FEATURES_ENABLED = process.env.AI_FEATURES_ENABLED === "true";
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
 
+// Constants
+const DEFAULT_TONE = "neutral";
+const DEFAULT_GRAMMAR_SCORE = 85;
+const DEFAULT_ENGAGEMENT_SCORE = 75;
+const DEFAULT_ORIGINALITY_SCORE = 80;
+const MAX_HEADLINE_LENGTH = 150;
+const SUMMARY_LENGTH_BUFFER = 50;
+
 // Initialize OpenAI client
 const openai = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : null;
 
@@ -453,7 +461,7 @@ Provide only the rewritten text without any explanations or prefixes.`;
 
   const result = {
     content: adjustedContent.trim(),
-    originalTone: "neutral",
+    originalTone: DEFAULT_TONE,
   };
 
   // Cache for 6 hours
@@ -522,7 +530,7 @@ Text to analyze:
         hasIssues: parsed.hasIssues || false,
         issues: parsed.issues || [],
         correctedContent: parsed.correctedContent,
-        score: parsed.score || 85,
+        score: parsed.score || DEFAULT_GRAMMAR_SCORE,
       };
     } else {
       result = {
@@ -535,7 +543,7 @@ Text to analyze:
     result = {
       hasIssues: false,
       issues: [],
-      score: 85,
+      score: DEFAULT_GRAMMAR_SCORE,
     };
   }
 
@@ -604,25 +612,25 @@ Post content:
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       result = {
-        score: parsed.score || 75,
+        score: parsed.score || DEFAULT_ENGAGEMENT_SCORE,
         factors: parsed.factors || [],
         overallAssessment: parsed.overallAssessment || "Content has good potential.",
-        originalityScore: parsed.originalityScore || 80,
+        originalityScore: parsed.originalityScore || DEFAULT_ORIGINALITY_SCORE,
       };
     } else {
       result = {
-        score: 75,
+        score: DEFAULT_ENGAGEMENT_SCORE,
         factors: [],
         overallAssessment: "Content analysis complete.",
-        originalityScore: 80,
+        originalityScore: DEFAULT_ORIGINALITY_SCORE,
       };
     }
   } catch (e) {
     result = {
-      score: 75,
+      score: DEFAULT_ENGAGEMENT_SCORE,
       factors: [],
       overallAssessment: "Content has moderate engagement potential.",
-      originalityScore: 80,
+      originalityScore: DEFAULT_ORIGINALITY_SCORE,
     };
   }
 
@@ -662,7 +670,7 @@ Provide only the headlines, one per line, without numbering or additional text.`
   const headlines = response
     .split("\n")
     .map(line => line.trim().replace(/^[0-9]+\.\s*/, "").replace(/^[-•*]\s*/, ""))
-    .filter(line => line.length > 0 && line.length <= 150)
+    .filter(line => line.length > 0 && line.length <= MAX_HEADLINE_LENGTH)
     .slice(0, count);
 
   const result = { headlines };
@@ -701,7 +709,7 @@ Provide only the summary without any prefixes or explanations.`;
   const summary = await callGeminiAPI(prompt);
 
   const result = {
-    summary: summary.trim().slice(0, maxLength + 50), // Allow some buffer
+    summary: summary.trim().slice(0, maxLength + SUMMARY_LENGTH_BUFFER), // Allow some buffer
   };
 
   // Cache for 6 hours
@@ -742,7 +750,7 @@ Provide only the CTAs, one per line, without numbering or additional text.`;
   const ctas = response
     .split("\n")
     .map(line => line.trim().replace(/^[0-9]+\.\s*/, "").replace(/^[-•*]\s*/, ""))
-    .filter(line => line.length > 0 && line.length <= 150)
+    .filter(line => line.length > 0 && line.length <= MAX_HEADLINE_LENGTH)
     .slice(0, count);
 
   const result = { ctas };

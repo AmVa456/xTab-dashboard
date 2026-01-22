@@ -3,8 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { queryClient } from "@/lib/queryClient";
-import { apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
   useGenerateContent,
@@ -43,7 +42,7 @@ import {
   RefreshCw,
   Zap,
 } from "lucide-react";
-import type { Post, Platform, InsertPost } from "@shared/schema";
+import type { Post, Platform, InsertPost, AIMetadata } from "@shared/schema";
 
 const postFormSchema = z.object({
   title: z.string().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
@@ -67,13 +66,23 @@ export default function AIPostComposer({ post, onSubmit, onCancel }: AIPostCompo
   const isEditing = !!post;
   
   // AI state
-  const [aiMetadata, setAiMetadata] = useState<any>({
+  const [aiMetadata, setAiMetadata] = useState<Partial<AIMetadata>>({
     isAIGenerated: false,
     modifications: [],
   });
   const [suggestedHashtags, setSuggestedHashtags] = useState<string[]>([]);
-  const [grammarResult, setGrammarResult] = useState<any>(null);
-  const [engagementResult, setEngagementResult] = useState<any>(null);
+  const [grammarResult, setGrammarResult] = useState<{
+    hasIssues: boolean;
+    issues: Array<{ type: string; message: string; suggestion: string }>;
+    correctedContent?: string;
+    score: number;
+  } | null>(null);
+  const [engagementResult, setEngagementResult] = useState<{
+    score: number;
+    factors: Array<{ factor: string; impact: string; suggestion: string }>;
+    overallAssessment: string;
+    originalityScore: number;
+  } | null>(null);
   const [headlineSuggestions, setHeadlineSuggestions] = useState<string[]>([]);
   const [ctaSuggestions, setCtaSuggestions] = useState<string[]>([]);
 
@@ -125,11 +134,11 @@ export default function AIPostComposer({ post, onSubmit, onCancel }: AIPostCompo
 
   const createMutation = useMutation({
     mutationFn: async (data: PostFormData) => {
-      const postData: any = {
+      const postData: InsertPost & { aiMetadata?: Partial<AIMetadata> } = {
         ...data,
         scheduledFor: data.scheduledFor ? new Date(data.scheduledFor) : null,
         publishedAt: data.status === "published" ? new Date() : null,
-        aiMetadata: aiMetadata,
+        aiMetadata: aiMetadata as any,
       };
       
       const response = await apiRequest("POST", "/api/posts", postData);
@@ -155,11 +164,11 @@ export default function AIPostComposer({ post, onSubmit, onCancel }: AIPostCompo
 
   const updateMutation = useMutation({
     mutationFn: async (data: PostFormData) => {
-      const postData: any = {
+      const postData: Partial<Post> & { aiMetadata?: Partial<AIMetadata> } = {
         ...data,
         scheduledFor: data.scheduledFor ? new Date(data.scheduledFor) : null,
         publishedAt: data.status === "published" && !post?.publishedAt ? new Date() : post?.publishedAt,
-        aiMetadata: aiMetadata,
+        aiMetadata: aiMetadata as any,
       };
       
       const response = await apiRequest("PUT", `/api/posts/${post!.id}`, postData);
@@ -207,7 +216,7 @@ export default function AIPostComposer({ post, onSubmit, onCancel }: AIPostCompo
       
       setAiMetadata({
         isAIGenerated: true,
-        tone,
+        tone: tone as AIMetadata["tone"],
         generatedAt: new Date().toISOString(),
         originalPrompt: topic,
         modifications: [],
@@ -245,9 +254,9 @@ export default function AIPostComposer({ post, onSubmit, onCancel }: AIPostCompo
       
       form.setValue("content", result.content);
       
-      setAiMetadata((prev: any) => ({
+      setAiMetadata((prev) => ({
         ...prev,
-        tone: targetTone,
+        tone: targetTone as AIMetadata["tone"],
         modifications: [
           ...(prev.modifications || []),
           {
@@ -449,7 +458,7 @@ export default function AIPostComposer({ post, onSubmit, onCancel }: AIPostCompo
       form.setValue("title", result.optimizedTitle);
       form.setValue("content", result.optimizedContent);
       
-      setAiMetadata((prev: any) => ({
+      setAiMetadata((prev) => ({
         ...prev,
         modifications: [
           ...(prev.modifications || []),

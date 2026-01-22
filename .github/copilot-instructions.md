@@ -30,7 +30,7 @@ xTab is a modern, full-stack social media post management dashboard built to man
 ## Project Structure
 
 ```
-xTab-dasboard/
+xTab-dashboard/
 ├── client/                    # Frontend React application
 │   ├── src/
 │   │   ├── components/        # Reusable UI components

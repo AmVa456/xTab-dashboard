@@ -43,7 +43,7 @@ export interface SuggestHashtagsResponse {
     tag: string;
     relevanceScore: number;
     trending: boolean;
-    category: string;
+    category: 'primary' | 'secondary' | 'broad';
   }>;
 }
 

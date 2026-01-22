@@ -34,7 +34,7 @@ interface Hashtag {
   tag: string;
   relevanceScore: number;
   trending: boolean;
-  category: string;
+  category: 'primary' | 'secondary' | 'broad';
   isAIGenerated?: boolean;
   selected?: boolean;
 }

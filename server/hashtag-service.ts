@@ -128,6 +128,12 @@ class HashtagService {
     try {
       const objectId = new ObjectId(suggestionId);
       
+      // Get the suggestion to retrieve platform info
+      const suggestion = await this.suggestions.findOne({ _id: objectId });
+      if (!suggestion) {
+        return false;
+      }
+      
       // Update the hashtag in the suggestion
       await this.suggestions.updateOne(
         { _id: objectId, "hashtags.tag": hashtag },
@@ -142,9 +148,9 @@ class HashtagService {
         }
       );
 
-      // Update analytics
+      // Update analytics with platform context
       if (selected) {
-        await this.incrementSelection(hashtag);
+        await this.incrementSelection(hashtag, suggestion.platform);
       }
 
       return true;
@@ -211,7 +217,10 @@ class HashtagService {
 
     try {
       for (const hashtag of hashtags) {
-        const filter = { hashtag: hashtag.tag, platform: platform || "" };
+        const filter = { 
+          hashtag: hashtag.tag, 
+          platform: platform || null  // Use null instead of empty string
+        };
         
         await this.analytics.updateOne(
           filter,
@@ -219,7 +228,7 @@ class HashtagService {
             $inc: { totalSuggestions: 1 },
             $setOnInsert: {
               hashtag: hashtag.tag,
-              platform: platform || "",
+              platform: platform || null,
               totalSelections: 0,
               selectionRate: 0,
             },
@@ -235,19 +244,22 @@ class HashtagService {
   /**
    * Increment selection count for a hashtag
    */
-  private async incrementSelection(hashtag: string): Promise<void> {
+  private async incrementSelection(hashtag: string, platform?: string): Promise<void> {
     if (!this.analytics) return;
 
     try {
-      // Get current stats to calculate selection rate
-      const current = await this.analytics.findOne({ hashtag });
+      // Get current stats to calculate selection rate, matching by hashtag and platform
+      const current = await this.analytics.findOne({ 
+        hashtag, 
+        platform: platform || null 
+      });
       
       if (current) {
         const newSelections = current.totalSelections + 1;
         const selectionRate = (newSelections / current.totalSuggestions) * 100;
 
         await this.analytics.updateOne(
-          { hashtag },
+          { hashtag, platform: platform || null },
           {
             $inc: { totalSelections: 1 },
             $set: {

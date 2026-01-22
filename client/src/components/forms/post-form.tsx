@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -40,7 +40,7 @@ interface Hashtag {
   tag: string;
   relevanceScore: number;
   trending: boolean;
-  category: string;
+  category: 'primary' | 'secondary' | 'broad';
   isAIGenerated?: boolean;
   selected?: boolean;
 }
@@ -57,7 +57,7 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
   const [suggestedHashtags, setSuggestedHashtags] = useState<Hashtag[]>([]);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string>("");
   const [hashtagSuggestionId, setHashtagSuggestionId] = useState<string | null>(null);
-  const [contentDebounceTimer, setContentDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+  const contentDebounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   const { data: platforms = [] } = useQuery<Platform[]>({
     queryKey: ["/api/platforms"],
@@ -316,25 +316,23 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
   // Real-time hashtag update based on content changes
   const handleContentChange = useCallback((content: string) => {
     // Clear existing timer
-    if (contentDebounceTimer) {
-      clearTimeout(contentDebounceTimer);
+    if (contentDebounceTimer.current) {
+      clearTimeout(contentDebounceTimer.current);
     }
 
     // Only auto-update if we already have suggestions and content is substantial
     if (suggestedHashtags.length > 0 && content.length > 50) {
-      const timer = setTimeout(() => {
+      contentDebounceTimer.current = setTimeout(() => {
         handleSuggestHashtags(true); // Auto-update without showing toast
       }, 3000); // Wait 3 seconds after user stops typing
-
-      setContentDebounceTimer(timer);
     }
-  }, [suggestedHashtags.length, contentDebounceTimer]);
+  }, [suggestedHashtags.length]);
 
   // Cleanup timer on unmount
   useEffect(() => {
     return () => {
-      if (contentDebounceTimer) {
-        clearTimeout(contentDebounceTimer);
+      if (contentDebounceTimer.current) {
+        clearTimeout(contentDebounceTimer.current);
       }
     };
   }, [contentDebounceTimer]);

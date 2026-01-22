@@ -349,7 +349,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const { platform, limit } = req.query;
-      const limitNum = limit ? parseInt(limit as string, 10) : 10;
+      
+      // Validate and bound limit to prevent abuse
+      let limitNum = limit ? parseInt(limit as string, 10) : 10;
+      if (isNaN(limitNum) || limitNum < 1) {
+        limitNum = 10;
+      }
+      if (limitNum > 100) {
+        limitNum = 100;
+      }
       
       const trending = await hashtagService.getTrendingHashtags(
         platform as string,
@@ -375,7 +383,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const { platform, limit } = req.query;
-      const limitNum = limit ? parseInt(limit as string, 10) : 20;
+      
+      // Validate and bound limit to prevent abuse
+      let limitNum = limit ? parseInt(limit as string, 10) : 20;
+      if (isNaN(limitNum) || limitNum < 1) {
+        limitNum = 20;
+      }
+      if (limitNum > 100) {
+        limitNum = 100;
+      }
       
       const analytics = await hashtagService.getHashtagAnalytics(
         platform as string,

@@ -6,16 +6,17 @@ import { z } from "zod";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useGenerateContent, useGenerateImage, useSuggestHashtags, useAIStatus } from "@/hooks/use-ai";
+import { useGenerateContent, useSuggestHashtags, useAIStatus } from "@/hooks/use-ai";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Hash, Image as ImageIcon, Loader2, X } from "lucide-react";
-import type { Post, Platform, InsertPost } from "@shared/schema";
+import { Sparkles, Hash, Loader2, X } from "lucide-react";
+import AIImageGenerator from "./ai-image-generator";
+import type { Post, Platform, InsertPost, CoverImage } from "@shared/schema";
 
 const postFormSchema = z.object({
   title: z.string().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
@@ -38,7 +39,9 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
   const { toast } = useToast();
   const isEditing = !!post;
   const [suggestedHashtags, setSuggestedHashtags] = useState<string[]>([]);
-  const [generatedImageUrl, setGeneratedImageUrl] = useState<string>("");
+  const [selectedCoverImage, setSelectedCoverImage] = useState<CoverImage | null>(
+    post?.coverImage || null
+  );
 
   const { data: platforms = [] } = useQuery<Platform[]>({
     queryKey: ["/api/platforms"],
@@ -46,7 +49,6 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
 
   const { data: aiStatus } = useAIStatus();
   const generateContentMutation = useGenerateContent();
-  const generateImageMutation = useGenerateImage();
   const suggestHashtagsMutation = useSuggestHashtags();
 
   const form = useForm<PostFormData>({
@@ -71,6 +73,7 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
         status: post.status as "draft" | "published" | "scheduled" | "failed",
         scheduledFor: post.scheduledFor ? new Date(post.scheduledFor).toISOString().slice(0, 16) : "",
       });
+      setSelectedCoverImage(post.coverImage || null);
     }
   }, [post, form]);
 
@@ -80,6 +83,7 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
         ...data,
         scheduledFor: data.scheduledFor ? new Date(data.scheduledFor) : null,
         publishedAt: data.status === "published" ? new Date() : null,
+        coverImage: selectedCoverImage,
       };
       
       const response = await apiRequest("POST", "/api/posts", postData);
@@ -109,6 +113,7 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
         ...data,
         scheduledFor: data.scheduledFor ? new Date(data.scheduledFor) : null,
         publishedAt: data.status === "published" && post?.status !== "published" ? new Date() : post?.publishedAt,
+        coverImage: selectedCoverImage,
       };
       
       const response = await apiRequest("PUT", `/api/posts/${post!.id}`, updates);
@@ -175,41 +180,6 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to generate content",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleGenerateImage = async () => {
-    const title = form.getValues("title");
-    const content = form.getValues("content");
-    
-    if (!title && !content) {
-      toast({
-        title: "Content Required",
-        description: "Please enter a title or content first to generate an image",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const result = await generateImageMutation.mutateAsync({
-        description: title || content.slice(0, 100),
-        style: "modern and professional",
-      });
-
-      if (result.imageUrl) {
-        setGeneratedImageUrl(result.imageUrl);
-        toast({
-          title: "Image Generated",
-          description: "AI has generated an image concept for your post",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to generate image",
         variant: "destructive",
       });
     }
@@ -311,22 +281,6 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={handleGenerateImage}
-                disabled={generateImageMutation.isPending || isPending}
-                className="gap-2"
-              >
-                {generateImageMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ImageIcon className="h-4 w-4" />
-                )}
-                AI Generate Image
-              </Button>
-              
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
                 onClick={handleSuggestHashtags}
                 disabled={suggestHashtagsMutation.isPending || isPending}
                 className="gap-2"
@@ -346,28 +300,15 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
             </div>
           )}
 
-          {/* Display generated image */}
-          {generatedImageUrl && (
-            <div className="relative">
-              <img 
-                src={generatedImageUrl} 
-                alt="AI Generated" 
-                className="w-full h-48 object-cover rounded-lg border"
-              />
-              <Button
-                type="button"
-                variant="destructive"
-                size="icon"
-                className="absolute top-2 right-2 h-8 w-8"
-                onClick={() => setGeneratedImageUrl("")}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              <Badge className="absolute bottom-2 left-2 gap-1">
-                <Sparkles className="h-3 w-3" />
-                AI Generated
-              </Badge>
-            </div>
+          {/* AI Image Generator */}
+          {aiStatus?.enabled && (
+            <AIImageGenerator
+              postTitle={form.watch("title")}
+              postContent={form.watch("content")}
+              currentImage={selectedCoverImage}
+              onImageSelect={setSelectedCoverImage}
+              disabled={isPending}
+            />
           )}
 
           {/* Display suggested hashtags */}

@@ -1,0 +1,19 @@
+# .railwayignore
+node_modules/
+.git/
+.github/
+.vscode/
+.devcontainer/
+.codesandbox/
+*.md
+!README.md
+!RAILWAY_SETUP.md
+.env.example
+.env.local
+.DS_Store
+dist/
+.replit
+replit.nix
+attached_assets/
+docs/
+xData/

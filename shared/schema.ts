@@ -51,3 +51,40 @@ export type InsertPlatform = z.infer<typeof insertPlatformSchema>;
 export type Platform = typeof platforms.$inferSelect;
 export type InsertPost = z.infer<typeof insertPostSchema>;
 export type Post = typeof posts.$inferSelect;
+
+// Hashtag-related types and schemas (stored in MongoDB)
+export const hashtagSuggestionSchema = z.object({
+  id: z.string().optional(), // MongoDB _id
+  postId: z.string().optional(), // Reference to post if associated
+  content: z.string(), // Content the hashtags were generated for
+  platform: z.string().optional(), // Platform name
+  hashtags: z.array(z.object({
+    tag: z.string(), // The hashtag (with #)
+    isAIGenerated: z.boolean().default(true), // AI vs user added
+    relevanceScore: z.number().optional(), // 0-1 relevance score
+    trending: z.boolean().default(false), // Is it trending?
+    selected: z.boolean().default(false), // Was it selected by user?
+    selectionCount: z.number().default(0), // How many times selected
+  })),
+  createdAt: z.date().default(() => new Date()),
+  updatedAt: z.date().default(() => new Date()),
+});
+
+export type HashtagSuggestion = z.infer<typeof hashtagSuggestionSchema>;
+
+// Hashtag analytics schema
+export const hashtagAnalyticsSchema = z.object({
+  hashtag: z.string(),
+  platform: z.string().optional(),
+  totalSuggestions: z.number().default(0),
+  totalSelections: z.number().default(0),
+  selectionRate: z.number().default(0), // percentage
+  lastUsed: z.date().optional(),
+  performance: z.object({
+    avgLikes: z.number().default(0),
+    avgComments: z.number().default(0),
+    avgEngagement: z.number().default(0),
+  }).optional(),
+});
+
+export type HashtagAnalytics = z.infer<typeof hashtagAnalyticsSchema>;

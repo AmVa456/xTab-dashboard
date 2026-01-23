@@ -35,14 +35,7 @@ export const posts = pgTable("posts", {
   publishedAt: timestamp("published_at"),
   createdAt: timestamp("created_at").default(sql`now()`),
   updatedAt: timestamp("updated_at").default(sql`now()`),
-  // AI-generated cover image metadata
-  coverImage: jsonb("cover_image").$type<{
-    url: string;
-    prompt: string;
-    style?: string;
-    generatedAt: string;
-    attribution: string;
-  }>(),
+  aiMetadata: jsonb("ai_metadata"), // AI-generated metadata
 });
 
 // Cover image validation schema

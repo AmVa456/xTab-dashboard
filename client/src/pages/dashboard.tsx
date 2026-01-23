@@ -111,7 +111,7 @@ export default function Dashboard() {
 
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <PostForm 
+          <AIPostComposer 
             onSubmit={() => setShowCreateModal(false)}
             onCancel={() => setShowCreateModal(false)}
           />
@@ -120,7 +120,7 @@ export default function Dashboard() {
 
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <PostForm 
+          <AIPostComposer 
             post={selectedPost}
             onSubmit={() => {
               setShowEditModal(false);

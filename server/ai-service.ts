@@ -16,6 +16,14 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const AI_FEATURES_ENABLED = process.env.AI_FEATURES_ENABLED === "true";
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
 
+// Constants
+const DEFAULT_TONE = "neutral";
+const DEFAULT_GRAMMAR_SCORE = 85;
+const DEFAULT_ENGAGEMENT_SCORE = 75;
+const DEFAULT_ORIGINALITY_SCORE = 80;
+const MAX_HEADLINE_LENGTH = 150;
+const SUMMARY_LENGTH_BUFFER = 50;
+
 // Initialize OpenAI client
 const openai = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : null;
 
@@ -44,10 +52,54 @@ export const chatSchema = z.object({
   context: z.string().optional(),
 });
 
+export const adjustToneSchema = z.object({
+  content: z.string().min(1, "Content is required"),
+  targetTone: z.enum(["professional", "casual", "friendly", "formal", "humorous"]),
+});
+
+export const checkGrammarSchema = z.object({
+  content: z.string().min(1, "Content is required"),
+});
+
+export const analyzeEngagementSchema = z.object({
+  content: z.string().min(1, "Content is required"),
+  platform: z.string().optional(),
+});
+
+export const generateHeadlineSchema = z.object({
+  content: z.string().min(1, "Content is required"),
+  count: z.number().min(1).max(5).optional().default(3),
+});
+
+export const generateSummarySchema = z.object({
+  content: z.string().min(1, "Content is required"),
+  maxLength: z.number().optional().default(200),
+});
+
+export const generateCTASchema = z.object({
+  content: z.string().min(1, "Content is required"),
+  platform: z.string().optional(),
+  count: z.number().min(1).max(3).optional().default(2),
+});
+
+export const optimizePostSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  content: z.string().min(1, "Content is required"),
+  platform: z.string().optional(),
+  targetTone: z.enum(["professional", "casual", "friendly", "formal", "humorous"]).optional(),
+});
+
 export type GenerateContentRequest = z.infer<typeof generateContentSchema>;
 export type GenerateImageRequest = z.infer<typeof generateImageSchema>;
 export type SuggestHashtagsRequest = z.infer<typeof suggestHashtagsSchema>;
 export type ChatRequest = z.infer<typeof chatSchema>;
+export type AdjustToneRequest = z.infer<typeof adjustToneSchema>;
+export type CheckGrammarRequest = z.infer<typeof checkGrammarSchema>;
+export type AnalyzeEngagementRequest = z.infer<typeof analyzeEngagementSchema>;
+export type GenerateHeadlineRequest = z.infer<typeof generateHeadlineSchema>;
+export type GenerateSummaryRequest = z.infer<typeof generateSummarySchema>;
+export type GenerateCTARequest = z.infer<typeof generateCTASchema>;
+export type OptimizePostRequest = z.infer<typeof optimizePostSchema>;
 
 /**
  * Check if AI features are enabled and configured
@@ -457,6 +509,472 @@ Provide a helpful, actionable response. If relevant, include 2-3 specific sugges
   if (!context) {
     await cacheService.set("chat", { message }, result, 43200);
   }
+
+  return result;
+}
+
+/**
+ * Adjust tone of content
+ */
+export async function adjustTone(request: AdjustToneRequest): Promise<{
+  content: string;
+  originalTone?: string;
+}> {
+  const { content, targetTone } = request;
+
+  // Check cache first
+  const cached = await cacheService.get<{ content: string; originalTone?: string }>(
+    "adjust-tone",
+    { content: content.slice(0, 200), targetTone }
+  );
+  
+  if (cached) {
+    return cached;
+  }
+
+  const toneDescriptions = {
+    professional: "formal, business-like, and authoritative",
+    casual: "relaxed, informal, and conversational",
+    friendly: "warm, approachable, and personable",
+    formal: "respectful, structured, and traditional",
+    humorous: "witty, entertaining, and lighthearted",
+  };
+
+  const prompt = `Rewrite the following text to have a ${toneDescriptions[targetTone]} tone while preserving the core message and key information.
+
+Original text:
+"${content}"
+
+Provide only the rewritten text without any explanations or prefixes.`;
+
+  const adjustedContent = await callGeminiAPI(prompt);
+
+  const result = {
+    content: adjustedContent.trim(),
+    originalTone: DEFAULT_TONE,
+  };
+
+  // Cache for 6 hours
+  await cacheService.set("adjust-tone", { content: content.slice(0, 200), targetTone }, result, 21600);
+
+  return result;
+}
+
+/**
+ * Check grammar and provide corrections
+ */
+export async function checkGrammar(request: CheckGrammarRequest): Promise<{
+  hasIssues: boolean;
+  issues: Array<{ type: string; message: string; suggestion: string }>;
+  correctedContent?: string;
+  score: number;
+}> {
+  const { content } = request;
+
+  // Check cache first
+  const cached = await cacheService.get<{
+    hasIssues: boolean;
+    issues: Array<{ type: string; message: string; suggestion: string }>;
+    correctedContent?: string;
+    score: number;
+  }>(
+    "check-grammar",
+    { content: content.slice(0, 500) }
+  );
+  
+  if (cached) {
+    return cached;
+  }
+
+  const prompt = `Analyze the following text for grammar, spelling, and style issues. Provide your response in JSON format with the following structure:
+{
+  "hasIssues": boolean,
+  "issues": [
+    {
+      "type": "grammar|spelling|style",
+      "message": "description of the issue",
+      "suggestion": "suggested correction"
+    }
+  ],
+  "correctedContent": "the fully corrected text",
+  "score": number between 0-100 indicating grammar quality
+}
+
+Text to analyze:
+"${content}"`;
+
+  const response = await callGeminiAPI(prompt);
+
+  let result: {
+    hasIssues: boolean;
+    issues: Array<{ type: string; message: string; suggestion: string }>;
+    correctedContent?: string;
+    score: number;
+  };
+
+  try {
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      result = {
+        hasIssues: parsed.hasIssues || false,
+        issues: parsed.issues || [],
+        correctedContent: parsed.correctedContent,
+        score: parsed.score || DEFAULT_GRAMMAR_SCORE,
+      };
+    } else {
+      result = {
+        hasIssues: false,
+        issues: [],
+        score: 90,
+      };
+    }
+  } catch (e) {
+    result = {
+      hasIssues: false,
+      issues: [],
+      score: DEFAULT_GRAMMAR_SCORE,
+    };
+  }
+
+  // Cache for 12 hours
+  await cacheService.set("check-grammar", { content: content.slice(0, 500) }, result, 43200);
+
+  return result;
+}
+
+/**
+ * Analyze engagement potential
+ */
+export async function analyzeEngagement(request: AnalyzeEngagementRequest): Promise<{
+  score: number;
+  factors: Array<{ factor: string; impact: string; suggestion: string }>;
+  overallAssessment: string;
+  originalityScore: number;
+}> {
+  const { content, platform } = request;
+
+  // Check cache first
+  const cached = await cacheService.get<{
+    score: number;
+    factors: Array<{ factor: string; impact: string; suggestion: string }>;
+    overallAssessment: string;
+    originalityScore: number;
+  }>(
+    "analyze-engagement",
+    { content: content.slice(0, 300), platform }
+  );
+  
+  if (cached) {
+    return cached;
+  }
+
+  const platformContext = platform ? ` for ${platform}` : "";
+
+  const prompt = `Analyze the following social media post${platformContext} for engagement potential. Provide your response in JSON format:
+{
+  "score": number between 0-100 indicating engagement potential,
+  "factors": [
+    {
+      "factor": "name of the factor (e.g., 'Hook', 'Clarity', 'Call-to-action')",
+      "impact": "positive|negative|neutral",
+      "suggestion": "specific suggestion for improvement"
+    }
+  ],
+  "overallAssessment": "brief overall assessment",
+  "originalityScore": number between 0-100 indicating originality
+}
+
+Post content:
+"${content}"`;
+
+  const response = await callGeminiAPI(prompt);
+
+  let result: {
+    score: number;
+    factors: Array<{ factor: string; impact: string; suggestion: string }>;
+    overallAssessment: string;
+    originalityScore: number;
+  };
+
+  try {
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      result = {
+        score: parsed.score || DEFAULT_ENGAGEMENT_SCORE,
+        factors: parsed.factors || [],
+        overallAssessment: parsed.overallAssessment || "Content has good potential.",
+        originalityScore: parsed.originalityScore || DEFAULT_ORIGINALITY_SCORE,
+      };
+    } else {
+      result = {
+        score: DEFAULT_ENGAGEMENT_SCORE,
+        factors: [],
+        overallAssessment: "Content analysis complete.",
+        originalityScore: DEFAULT_ORIGINALITY_SCORE,
+      };
+    }
+  } catch (e) {
+    result = {
+      score: DEFAULT_ENGAGEMENT_SCORE,
+      factors: [],
+      overallAssessment: "Content has moderate engagement potential.",
+      originalityScore: DEFAULT_ORIGINALITY_SCORE,
+    };
+  }
+
+  // Cache for 6 hours
+  await cacheService.set("analyze-engagement", { content: content.slice(0, 300), platform }, result, 21600);
+
+  return result;
+}
+
+/**
+ * Generate headline suggestions
+ */
+export async function generateHeadline(request: GenerateHeadlineRequest): Promise<{
+  headlines: string[];
+}> {
+  const { content, count = 3 } = request;
+
+  // Check cache first
+  const cached = await cacheService.get<{ headlines: string[] }>(
+    "generate-headline",
+    { content: content.slice(0, 200), count }
+  );
+  
+  if (cached) {
+    return cached;
+  }
+
+  const prompt = `Based on the following content, generate ${count} compelling headlines that are attention-grabbing, clear, and relevant. Each headline should be concise (60 characters or less).
+
+Content:
+"${content.slice(0, 500)}"
+
+Provide only the headlines, one per line, without numbering or additional text.`;
+
+  const response = await callGeminiAPI(prompt);
+
+  const headlines = response
+    .split("\n")
+    .map(line => line.trim().replace(/^[0-9]+\.\s*/, "").replace(/^[-•*]\s*/, ""))
+    .filter(line => line.length > 0 && line.length <= MAX_HEADLINE_LENGTH)
+    .slice(0, count);
+
+  const result = { headlines };
+
+  // Cache for 6 hours
+  await cacheService.set("generate-headline", { content: content.slice(0, 200), count }, result, 21600);
+
+  return result;
+}
+
+/**
+ * Generate summary
+ */
+export async function generateSummary(request: GenerateSummaryRequest): Promise<{
+  summary: string;
+}> {
+  const { content, maxLength = 200 } = request;
+
+  // Check cache first
+  const cached = await cacheService.get<{ summary: string }>(
+    "generate-summary",
+    { content: content.slice(0, 500), maxLength }
+  );
+  
+  if (cached) {
+    return cached;
+  }
+
+  const prompt = `Create a concise summary of the following content in ${maxLength} characters or less. The summary should capture the main points and be engaging.
+
+Content:
+"${content}"
+
+Provide only the summary without any prefixes or explanations.`;
+
+  const summary = await callGeminiAPI(prompt);
+
+  const result = {
+    summary: summary.trim().slice(0, maxLength + SUMMARY_LENGTH_BUFFER), // Allow some buffer
+  };
+
+  // Cache for 6 hours
+  await cacheService.set("generate-summary", { content: content.slice(0, 500), maxLength }, result, 21600);
+
+  return result;
+}
+
+/**
+ * Generate call-to-action
+ */
+export async function generateCTA(request: GenerateCTARequest): Promise<{
+  ctas: string[];
+}> {
+  const { content, platform, count = 2 } = request;
+
+  // Check cache first
+  const cached = await cacheService.get<{ ctas: string[] }>(
+    "generate-cta",
+    { content: content.slice(0, 200), platform, count }
+  );
+  
+  if (cached) {
+    return cached;
+  }
+
+  const platformContext = platform ? ` suitable for ${platform}` : "";
+
+  const prompt = `Based on the following content, generate ${count} compelling call-to-action statements${platformContext}. Each CTA should be action-oriented, clear, and encourage engagement.
+
+Content:
+"${content.slice(0, 500)}"
+
+Provide only the CTAs, one per line, without numbering or additional text.`;
+
+  const response = await callGeminiAPI(prompt);
+
+  const ctas = response
+    .split("\n")
+    .map(line => line.trim().replace(/^[0-9]+\.\s*/, "").replace(/^[-•*]\s*/, ""))
+    .filter(line => line.length > 0 && line.length <= MAX_HEADLINE_LENGTH)
+    .slice(0, count);
+
+  const result = { ctas };
+
+  // Cache for 6 hours
+  await cacheService.set("generate-cta", { content: content.slice(0, 200), platform, count }, result, 21600);
+
+  return result;
+}
+
+/**
+ * Optimize post with comprehensive AI analysis and improvements
+ */
+export async function optimizePost(request: OptimizePostRequest): Promise<{
+  optimizedTitle: string;
+  optimizedContent: string;
+  suggestions: string[];
+  improvements: Array<{ area: string; change: string }>;
+  qualityScores: {
+    grammar: number;
+    engagement: number;
+    originality: number;
+  };
+}> {
+  const { title, content, platform, targetTone } = request;
+
+  // Check cache first
+  const cached = await cacheService.get<{
+    optimizedTitle: string;
+    optimizedContent: string;
+    suggestions: string[];
+    improvements: Array<{ area: string; change: string }>;
+    qualityScores: {
+      grammar: number;
+      engagement: number;
+      originality: number;
+    };
+  }>(
+    "optimize-post",
+    { title: title.slice(0, 100), content: content.slice(0, 300), platform, targetTone }
+  );
+  
+  if (cached) {
+    return cached;
+  }
+
+  const toneContext = targetTone ? ` with a ${targetTone} tone` : "";
+  const platformContext = platform ? ` for ${platform}` : "";
+
+  const prompt = `Optimize the following social media post${platformContext}${toneContext}. Provide comprehensive improvements in JSON format:
+{
+  "optimizedTitle": "improved title",
+  "optimizedContent": "improved content with better structure, clarity, and engagement",
+  "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3"],
+  "improvements": [
+    { "area": "grammar|structure|engagement|clarity", "change": "description of what was improved" }
+  ],
+  "qualityScores": {
+    "grammar": 0-100,
+    "engagement": 0-100,
+    "originality": 0-100
+  }
+}
+
+Original Title: "${title}"
+
+Original Content:
+"${content}"
+
+Focus on:
+- Correcting grammar and spelling
+- Improving clarity and flow
+- Enhancing engagement potential
+- Maintaining authenticity
+- Adding compelling elements`;
+
+  const response = await callGeminiAPI(prompt);
+
+  let result: {
+    optimizedTitle: string;
+    optimizedContent: string;
+    suggestions: string[];
+    improvements: Array<{ area: string; change: string }>;
+    qualityScores: {
+      grammar: number;
+      engagement: number;
+      originality: number;
+    };
+  };
+
+  try {
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      result = {
+        optimizedTitle: parsed.optimizedTitle || title,
+        optimizedContent: parsed.optimizedContent || content,
+        suggestions: parsed.suggestions || [],
+        improvements: parsed.improvements || [],
+        qualityScores: parsed.qualityScores || {
+          grammar: 90,
+          engagement: 85,
+          originality: 80,
+        },
+      };
+    } else {
+      result = {
+        optimizedTitle: title,
+        optimizedContent: content,
+        suggestions: ["Content is already well-optimized"],
+        improvements: [],
+        qualityScores: {
+          grammar: 90,
+          engagement: 85,
+          originality: 80,
+        },
+      };
+    }
+  } catch (e) {
+    result = {
+      optimizedTitle: title,
+      optimizedContent: content,
+      suggestions: ["Unable to optimize at this time"],
+      improvements: [],
+      qualityScores: {
+        grammar: 85,
+        engagement: 80,
+        originality: 75,
+      },
+    };
+  }
+
+  // Cache for 3 hours
+  await cacheService.set("optimize-post", { title: title.slice(0, 100), content: content.slice(0, 300), platform, targetTone }, result, 10800);
 
   return result;
 }

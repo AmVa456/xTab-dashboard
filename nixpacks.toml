@@ -1,0 +1,14 @@
+# Nixpacks configuration for Railway deployment
+# Railway uses Nixpacks as the default build system
+
+[phases.setup]
+nixPkgs = ["nodejs-20_x"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "npm run start"

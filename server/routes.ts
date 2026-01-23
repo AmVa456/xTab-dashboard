@@ -7,6 +7,16 @@ import * as aiService from "./ai-service";
 import { hashtagService } from "./hashtag-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint for Railway and monitoring
+  app.get("/api/health", (req, res) => {
+    res.json({ 
+      status: "ok", 
+      timestamp: Date.now(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || "development"
+    });
+  });
+
   // Platform routes
   app.get("/api/platforms", async (req, res) => {
     try {

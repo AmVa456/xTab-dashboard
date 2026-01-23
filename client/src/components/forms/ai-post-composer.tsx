@@ -576,7 +576,7 @@ export default function AIPostComposer({ post, onSubmit, onCancel }: AIPostCompo
       <DialogHeader>
         <div className="flex items-center justify-between">
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-xtab-blue" />
+            <Sparkles className="h-5 w-5 text-xtab-pink" />
             {isEditing ? "Edit Post with AI" : "AI-Powered Post Composer"}
           </DialogTitle>
           {aiMetadata.isAIGenerated && (
@@ -638,7 +638,7 @@ export default function AIPostComposer({ post, onSubmit, onCancel }: AIPostCompo
               />
 
               {headlineSuggestions.length > 0 && (
-                <Card className="border-xtab-blue/20 bg-blue-50/50">
+                <Card className="border-xtab-pink/20 bg-muted/30">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm flex items-center gap-2">
                       <Lightbulb className="h-4 w-4" />
@@ -992,7 +992,7 @@ export default function AIPostComposer({ post, onSubmit, onCancel }: AIPostCompo
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-xs text-muted-foreground">Engagement Score</p>
-                        <p className="text-2xl font-bold text-xtab-blue">{engagementResult.score}/100</p>
+                        <p className="text-2xl font-bold text-xtab-pink">{engagementResult.score}/100</p>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">Originality Score</p>

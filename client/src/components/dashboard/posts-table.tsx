@@ -81,7 +81,7 @@ export default function PostsTable({
     const variants = {
       published: "bg-green-100 text-green-800",
       scheduled: "bg-yellow-100 text-yellow-800",
-      draft: "bg-slate-100 text-slate-800",
+      draft: "bg-muted/30 text-foreground",
       failed: "bg-red-100 text-red-800",
     };
     return variants[status as keyof typeof variants] || variants.draft;
@@ -128,10 +128,10 @@ export default function PostsTable({
       <Card className="mb-6">
         <CardContent className="p-6">
           <div className="animate-pulse space-y-4">
-            <div className="h-10 bg-slate-200 rounded"></div>
+            <div className="h-10 bg-muted/30 rounded"></div>
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-16 bg-slate-200 rounded"></div>
+                <div key={i} className="h-16 bg-muted/30 rounded"></div>
               ))}
             </div>
           </div>
@@ -142,7 +142,7 @@ export default function PostsTable({
 
   return (
     <Card className="shadow mb-6">
-      <div className="border-b border-slate-200">
+      <div className="border-b border-border">
         <nav className="-mb-px flex space-x-8 px-6" aria-label="Tabs">
           {tabs.map((tab) => (
             <button
@@ -151,7 +151,7 @@ export default function PostsTable({
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm rounded-t-lg ${
                 activeTab === tab.id
                   ? "tab-active text-white border-transparent"
-                  : "text-slate-500 hover:text-slate-700 hover:border-slate-300 border-transparent"
+                  : "text-muted-foreground hover:text-foreground hover:border-border border-transparent"
               }`}
               data-testid={`tab-${tab.id}`}
             >
@@ -160,7 +160,7 @@ export default function PostsTable({
                 className={`ml-2 text-xs font-medium px-2 py-1 rounded-full ${
                   activeTab === tab.id 
                     ? "bg-white bg-opacity-20 text-white" 
-                    : "bg-slate-100 text-slate-600"
+                    : "bg-muted/30 text-foreground"
                 }`}
                 data-testid={`tab-count-${tab.id}`}
               >
@@ -213,51 +213,51 @@ export default function PostsTable({
         </div>
 
         <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-muted/30">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Post
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Platform
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Engagement
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-slate-200">
+            <tbody className="bg-card divide-y divide-border">
               {filteredPosts.map((post) => {
                 const platform = platforms.find(p => p.id === post.platformId);
                 return (
-                  <tr key={post.id} className="hover:bg-slate-50" data-testid={`post-row-${post.id}`}>
+                  <tr key={post.id} className="hover:bg-muted/30" data-testid={`post-row-${post.id}`}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
-                            <span className="text-slate-600 font-medium text-xs">
+                            <span className="text-foreground font-medium text-xs">
                               {post.title.charAt(0).toUpperCase()}
                             </span>
                           </div>
                         </div>
                         <div className="ml-4">
                           <div 
-                            className="text-sm font-medium text-slate-900"
+                            className="text-sm font-medium text-foreground"
                             data-testid={`post-title-${post.id}`}
                           >
                             {post.title}
                           </div>
-                          <div className="text-sm text-slate-500">
+                          <div className="text-sm text-muted-foreground">
                             {post.excerpt || post.content.substring(0, 50) + "..."}
                           </div>
                         </div>
@@ -267,7 +267,7 @@ export default function PostsTable({
                       <div className="flex items-center">
                         <div className={`w-4 h-4 ${platform?.color || "bg-slate-400"} rounded mr-2`}></div>
                         <span 
-                          className="text-sm text-slate-900"
+                          className="text-sm text-foreground"
                           data-testid={`post-platform-${post.id}`}
                         >
                           {platform?.name || "Unknown"}
@@ -282,7 +282,7 @@ export default function PostsTable({
                         {post.status}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                       <div className="flex items-center">
                         <Heart className="w-4 h-4 text-red-400 mr-1" />
                         <span data-testid={`post-likes-${post.id}`}>
@@ -295,7 +295,7 @@ export default function PostsTable({
                       </div>
                     </td>
                     <td 
-                      className="px-6 py-4 whitespace-nowrap text-sm text-slate-500"
+                      className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground"
                       data-testid={`post-date-${post.id}`}
                     >
                       {formatDate(
@@ -309,7 +309,7 @@ export default function PostsTable({
                           variant="ghost"
                           size="sm"
                           onClick={() => onEditPost(post)}
-                          className="text-xtab-blue hover:text-xtab-indigo"
+                          className="text-xtab-pink hover:text-xtab-pink-dark"
                           data-testid={`button-edit-${post.id}`}
                         >
                           <Edit2 className="w-4 h-4" />
@@ -317,7 +317,7 @@ export default function PostsTable({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-slate-400 hover:text-slate-600"
+                          className="text-muted-foreground hover:text-foreground"
                           data-testid={`button-view-${post.id}`}
                         >
                           <Eye className="w-4 h-4" />
@@ -342,7 +342,7 @@ export default function PostsTable({
         </div>
 
         {/* Pagination */}
-        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-slate-200 sm:px-6 mt-4">
+        <div className="bg-card px-4 py-3 flex items-center justify-between border-t border-border sm:px-6 mt-4">
           <div className="flex-1 flex justify-between sm:hidden">
             <Button variant="outline" disabled={currentPage === 1}>
               Previous
@@ -351,7 +351,7 @@ export default function PostsTable({
           </div>
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm text-slate-700" data-testid="pagination-info">
+              <p className="text-sm text-foreground" data-testid="pagination-info">
                 Showing <span className="font-medium">1</span> to{" "}
                 <span className="font-medium">{Math.min(10, filteredPosts.length)}</span> of{" "}
                 <span className="font-medium">{filteredPosts.length}</span> results
@@ -370,7 +370,7 @@ export default function PostsTable({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="bg-xtab-blue text-white"
+                  className="bg-xtab-pink text-white"
                   data-testid="button-page-1"
                 >
                   1

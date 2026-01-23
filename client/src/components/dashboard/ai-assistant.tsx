@@ -83,7 +83,7 @@ export default function AIAssistant() {
       <Card className="w-full">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-xtab-blue" />
+            <Sparkles className="h-5 w-5 text-xtab-pink" />
             <CardTitle>AI Assistant</CardTitle>
           </div>
           <CardDescription>Get help with content creation and ideas</CardDescription>
@@ -104,7 +104,7 @@ export default function AIAssistant() {
     <Card className="w-full h-full flex flex-col">
       <CardHeader className="flex-shrink-0">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-xtab-blue" />
+          <Sparkles className="h-5 w-5 text-xtab-pink" />
           <CardTitle>AI Assistant</CardTitle>
         </div>
         <CardDescription>
@@ -116,7 +116,7 @@ export default function AIAssistant() {
         <ScrollArea className="flex-1 pr-4 mb-4" ref={scrollRef}>
           {messages.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
-              <Sparkles className="h-12 w-12 mx-auto mb-4 text-xtab-blue/50" />
+              <Sparkles className="h-12 w-12 mx-auto mb-4 text-xtab-pink/50" />
               <p className="text-sm">Start a conversation with the AI assistant</p>
               <p className="text-xs mt-2">Try: "Give me ideas for a LinkedIn post about AI"</p>
             </div>
@@ -130,7 +130,7 @@ export default function AIAssistant() {
                   <div
                     className={`max-w-[85%] rounded-lg px-4 py-2 ${
                       message.role === "user"
-                        ? "bg-xtab-blue text-white"
+                        ? "bg-xtab-pink text-white"
                         : "bg-muted"
                     }`}
                   >
@@ -142,7 +142,7 @@ export default function AIAssistant() {
                         <ul className="text-xs space-y-1">
                           {message.suggestions.map((suggestion, idx) => (
                             <li key={idx} className="flex items-start gap-1">
-                              <span className="text-xtab-blue mt-0.5">•</span>
+                              <span className="text-xtab-pink mt-0.5">•</span>
                               <span>{suggestion}</span>
                             </li>
                           ))}

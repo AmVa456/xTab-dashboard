@@ -24,7 +24,7 @@ Railway is a modern Platform-as-a-Service (PaaS) that makes deployment straightf
 2. Click **"New Project"**
 3. Select **"Deploy from GitHub repo"**
 4. Authorize Railway to access your GitHub account if needed
-5. Select the `xTab-dasboard` repository
+5. Select the `xTab-dashboard` repository
 
 ### 2. Add PostgreSQL Database
 
@@ -291,7 +291,7 @@ Railway automatically deploys when you push to your connected branch.
 - **Railway Documentation**: https://docs.railway.app/
 - **Railway Discord**: https://discord.gg/railway
 - **Railway Status**: https://status.railway.app/
-- **Project Repository**: https://github.com/AmVa456/xTab-dasboard
+- **Project Repository**: https://github.com/AmVa456/xTab-dashboard
 
 ## Local Development vs Production
 

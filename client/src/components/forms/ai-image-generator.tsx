@@ -126,7 +126,7 @@ export default function AIImageGenerator({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Label className="text-base font-semibold flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-xtab-blue" />
+          <Sparkles className="h-5 w-5 text-xtab-pink" />
           AI Cover Image Generator
         </Label>
         {selectedIndex >= 0 && (
@@ -226,7 +226,7 @@ export default function AIImageGenerator({
                 key={index}
                 className={`cursor-pointer transition-all hover:shadow-md group ${
                   selectedIndex === index
-                    ? "ring-2 ring-xtab-blue shadow-md"
+                    ? "ring-2 ring-xtab-pink shadow-md"
                     : "opacity-70 hover:opacity-100"
                 }`}
                 onClick={() => handleImageSelect(index)}
@@ -249,7 +249,7 @@ export default function AIImageGenerator({
                     </Button>
                     {selectedIndex === index && (
                       <div className="absolute top-2 left-2">
-                        <Badge className="bg-xtab-blue text-white">
+                        <Badge className="bg-xtab-pink text-white">
                           Selected
                         </Badge>
                       </div>
@@ -292,7 +292,7 @@ export default function AIImageGenerator({
               <Badge
                 key={prompt}
                 variant="outline"
-                className="cursor-pointer hover:bg-xtab-blue hover:text-white transition-colors text-xs"
+                className="cursor-pointer hover:bg-xtab-pink hover:text-white transition-colors text-xs"
                 onClick={() => setCustomPrompt(prompt)}
               >
                 {prompt}

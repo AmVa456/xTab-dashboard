@@ -204,3 +204,70 @@ export function useHashtagAnalytics(platform?: string, limit?: number) {
     staleTime: 10 * 60 * 1000, // Cache for 10 minutes
   });
 }
+
+/**
+ * Stub hooks for AI features not yet implemented
+ * These are placeholders to prevent build errors
+ */
+export function useAdjustTone() {
+  return useMutation({
+    mutationFn: async (data: { content: string; tone: string }) => {
+      // Stub implementation
+      return { content: data.content };
+    },
+  });
+}
+
+export function useCheckGrammar() {
+  return useMutation({
+    mutationFn: async (data: { content: string }) => {
+      // Stub implementation
+      return { content: data.content, corrections: [] };
+    },
+  });
+}
+
+export function useAnalyzeEngagement() {
+  return useMutation({
+    mutationFn: async (data: { content: string }) => {
+      // Stub implementation
+      return { score: 75, insights: [] };
+    },
+  });
+}
+
+export function useGenerateHeadline() {
+  return useMutation({
+    mutationFn: async (data: { content: string }) => {
+      // Stub implementation
+      return { headline: "Generated Headline" };
+    },
+  });
+}
+
+export function useGenerateSummary() {
+  return useMutation({
+    mutationFn: async (data: { content: string }) => {
+      // Stub implementation
+      return { summary: "Generated summary" };
+    },
+  });
+}
+
+export function useGenerateCTA() {
+  return useMutation({
+    mutationFn: async (data: { content: string }) => {
+      // Stub implementation
+      return { cta: "Learn more" };
+    },
+  });
+}
+
+export function useOptimizePost() {
+  return useMutation({
+    mutationFn: async (data: { content: string }) => {
+      // Stub implementation
+      return { optimizedContent: data.content };
+    },
+  });
+}

@@ -121,9 +121,9 @@ export default function HashtagSuggestions({
   const getCategoryColor = (category: string) => {
     switch (category) {
       case "primary":
-        return "bg-xtab-blue text-white";
+        return "bg-xtab-pink text-white";
       case "secondary":
-        return "bg-xtab-indigo text-white";
+        return "bg-xtab-pink-light text-white";
       case "broad":
         return "bg-xtab-emerald text-white";
       default:
@@ -158,7 +158,7 @@ export default function HashtagSuggestions({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-xtab-blue" />
+          <Sparkles className="h-4 w-4 text-xtab-pink" />
           <span className="text-sm font-semibold">AI Hashtag Suggestions</span>
           <Badge variant="secondary" className="text-xs">
             {hashtags.length} suggested

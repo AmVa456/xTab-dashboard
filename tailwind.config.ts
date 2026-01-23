@@ -61,8 +61,9 @@ export default {
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
         },
-        "xtab-blue": "#3B82F6",
-        "xtab-indigo": "#6366F1",
+        "xtab-pink": "#FFB6C1",
+        "xtab-pink-light": "#FFD1DC",
+        "xtab-pink-dark": "#FFC0CB",
         "xtab-emerald": "#10B981",
       },
       fontFamily: {

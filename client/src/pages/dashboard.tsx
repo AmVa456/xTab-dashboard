@@ -9,6 +9,7 @@ import TrendingHashtags from "@/components/dashboard/trending-hashtags";
 import PostForm from "@/components/forms/post-form";
 import AIAssistant from "@/components/dashboard/ai-assistant";
 import StaticModeBanner from "@/components/dashboard/static-mode-banner";
+import AIPostComposer from "@/components/forms/ai-post-composer";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ export default function Dashboard() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const { data: aiStatus } = useAIStatus();
 
@@ -38,17 +40,23 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50">
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+    <div className="flex h-screen bg-background">
+      <Sidebar 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab}
+        mobileOpen={mobileMenuOpen}
+        onMobileClose={() => setMobileMenuOpen(false)}
+      />
       
       <div className="flex flex-col w-0 flex-1 overflow-hidden">
         <Header 
           searchQuery={searchQuery} 
           onSearchChange={setSearchQuery}
           onCreatePost={handleCreatePost}
+          onMobileMenuToggle={() => setMobileMenuOpen(true)}
         />
         
-        <main className="flex-1 relative overflow-y-auto focus:outline-none">
+        <main className="flex-1 relative overflow-y-auto focus:outline-none bg-background">
           {/* AI Assistant Floating Button */}
           {aiStatus?.enabled && (
             <div className="fixed bottom-6 right-6 z-50">
@@ -65,7 +73,7 @@ export default function Dashboard() {
                 <SheetContent side="right" className="w-full sm:w-[500px] sm:max-w-[500px] flex flex-col p-0">
                   <SheetHeader className="p-6 pb-0">
                     <SheetTitle className="flex items-center gap-2">
-                      <Sparkles className="h-5 w-5 text-xtab-blue" />
+                      <Sparkles className="h-5 w-5 text-xtab-pink" />
                       AI Assistant
                     </SheetTitle>
                   </SheetHeader>

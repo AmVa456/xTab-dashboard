@@ -75,7 +75,7 @@ export default function TrendingHashtags({ platform }: TrendingHashtagsProps) {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-xtab-blue" />
+            <TrendingUp className="h-5 w-5 text-xtab-pink" />
             <CardTitle className="text-lg">Trending Hashtags</CardTitle>
           </div>
           {trendingData?.hashtags && trendingData.hashtags.length > 0 && (
@@ -154,7 +154,7 @@ export default function TrendingHashtags({ platform }: TrendingHashtagsProps) {
             {analyticsData?.analytics && analyticsData.analytics.length > 0 && (
               <div className="space-y-3 pt-4 border-t">
                 <div className="flex items-center gap-2 text-sm font-medium">
-                  <BarChart3 className="h-4 w-4 text-xtab-indigo" />
+                  <BarChart3 className="h-4 w-4 text-xtab-pink-light" />
                   <span>Performance Analytics</span>
                 </div>
 
@@ -180,7 +180,7 @@ export default function TrendingHashtags({ platform }: TrendingHashtagsProps) {
                                 </Badge>
                                 <div className="w-12 h-2 bg-muted rounded-full overflow-hidden">
                                   <div
-                                    className="h-full bg-xtab-blue rounded-full transition-all"
+                                    className="h-full bg-xtab-pink rounded-full transition-all"
                                     style={{ width: `${item.selectionRate}%` }}
                                   />
                                 </div>
@@ -208,7 +208,7 @@ export default function TrendingHashtags({ platform }: TrendingHashtagsProps) {
         {/* AI Indicator */}
         <div className="mt-4 pt-4 border-t">
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <Sparkles className="h-3 w-3 text-xtab-blue" />
+            <Sparkles className="h-3 w-3 text-xtab-pink" />
             <span>Powered by AI Intelligence</span>
           </div>
         </div>

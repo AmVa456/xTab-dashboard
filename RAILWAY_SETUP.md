@@ -1,4 +1,23 @@
-# Railway Deployment Setup Guide
+# Railway Deployment Guide
+
+## 🚀 Quick Setup (Automated)
+
+**Fastest way to deploy - just run one script!**
+
+See [RAILWAY_QUICK_START.md](./RAILWAY_QUICK_START.md) for the automated setup guide.
+
+### TL;DR:
+```bash
+# 1. Create Railway project and add PostgreSQL
+# 2. Run setup script:
+npm run railway:setup
+```
+
+---
+
+## 📖 Manual Setup (Step-by-Step)
+
+If you prefer to set up Railway manually, follow the detailed instructions below.
 
 This guide will help you deploy the xTab Dashboard application to Railway.
 

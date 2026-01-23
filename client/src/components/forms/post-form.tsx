@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Hash, Image as ImageIcon, Loader2, X } from "lucide-react";
@@ -65,7 +65,6 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
 
   const { data: aiStatus } = useAIStatus();
   const generateContentMutation = useGenerateContent();
-  const generateImageMutation = useGenerateImage();
   const suggestHashtagsMutation = useSuggestHashtags();
   const saveHashtagSuggestions = useSaveHashtagSuggestions();
   const updateHashtagSelection = useUpdateHashtagSelection();
@@ -92,6 +91,7 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
         status: post.status as "draft" | "published" | "scheduled" | "failed",
         scheduledFor: post.scheduledFor ? new Date(post.scheduledFor).toISOString().slice(0, 16) : "",
       });
+      setSelectedCoverImage(post.coverImage || null);
     }
   }, [post, form]);
 
@@ -101,6 +101,7 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
         ...data,
         scheduledFor: data.scheduledFor ? new Date(data.scheduledFor) : null,
         publishedAt: data.status === "published" ? new Date() : null,
+        coverImage: selectedCoverImage,
       };
       
       const response = await apiRequest("POST", "/api/posts", postData);
@@ -130,6 +131,7 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
         ...data,
         scheduledFor: data.scheduledFor ? new Date(data.scheduledFor) : null,
         publishedAt: data.status === "published" && post?.status !== "published" ? new Date() : post?.publishedAt,
+        coverImage: selectedCoverImage,
       };
       
       const response = await apiRequest("PUT", `/api/posts/${post!.id}`, updates);
@@ -201,6 +203,7 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
     }
   };
 
+  const handleSuggestHashtags = async () => {
   const handleGenerateImage = async () => {
     const title = form.getValues("title");
     const content = form.getValues("content");
@@ -437,22 +440,6 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={handleGenerateImage}
-                disabled={generateImageMutation.isPending || isPending}
-                className="gap-2"
-              >
-                {generateImageMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ImageIcon className="h-4 w-4" />
-                )}
-                AI Generate Image
-              </Button>
-              
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
                 onClick={handleSuggestHashtags}
                 disabled={suggestHashtagsMutation.isPending || isPending}
                 className="gap-2"
@@ -472,28 +459,15 @@ export default function PostForm({ post, onSubmit, onCancel }: PostFormProps) {
             </div>
           )}
 
-          {/* Display generated image */}
-          {generatedImageUrl && (
-            <div className="relative">
-              <img 
-                src={generatedImageUrl} 
-                alt="AI Generated" 
-                className="w-full h-48 object-cover rounded-lg border"
-              />
-              <Button
-                type="button"
-                variant="destructive"
-                size="icon"
-                className="absolute top-2 right-2 h-8 w-8"
-                onClick={() => setGeneratedImageUrl("")}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              <Badge className="absolute bottom-2 left-2 gap-1">
-                <Sparkles className="h-3 w-3" />
-                AI Generated
-              </Badge>
-            </div>
+          {/* AI Image Generator */}
+          {aiStatus?.enabled && (
+            <AIImageGenerator
+              postTitle={form.watch("title")}
+              postContent={form.watch("content")}
+              currentImage={selectedCoverImage}
+              onImageSelect={setSelectedCoverImage}
+              disabled={isPending}
+            />
           )}
 
           {/* Display suggested hashtags with enhanced component */}

@@ -96,6 +96,7 @@ export class MemStorage implements IStorage {
         publishedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
         createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
         updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        coverImage: null,
       },
       {
         id: randomUUID(),
@@ -111,6 +112,7 @@ export class MemStorage implements IStorage {
         publishedAt: null,
         createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
         updatedAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
+        coverImage: null,
       },
       {
         id: randomUUID(),
@@ -125,6 +127,7 @@ export class MemStorage implements IStorage {
         publishedAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
         createdAt: new Date(Date.now() - 25 * 60 * 60 * 1000),
         updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        coverImage: null,
       },
       {
         id: randomUUID(),
@@ -140,6 +143,7 @@ export class MemStorage implements IStorage {
         publishedAt: null,
         createdAt: new Date(Date.now() - 48 * 60 * 60 * 1000),
         updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        coverImage: null,
       },
     ];
 
@@ -205,6 +209,7 @@ export class MemStorage implements IStorage {
       excerpt: insertPost.excerpt ?? null,
       scheduledFor: insertPost.scheduledFor ?? null,
       publishedAt: insertPost.publishedAt ?? null,
+      coverImage: insertPost.coverImage ?? null,
     };
     this.posts.set(id, post);
     return post;

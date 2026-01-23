@@ -35,7 +35,24 @@ export const posts = pgTable("posts", {
   publishedAt: timestamp("published_at"),
   createdAt: timestamp("created_at").default(sql`now()`),
   updatedAt: timestamp("updated_at").default(sql`now()`),
+  // AI-generated cover image metadata
+  coverImage: jsonb("cover_image").$type<{
+    url: string;
+    prompt: string;
+    style?: string;
+    generatedAt: string;
+    attribution: string;
+  }>(),
 });
+
+// Cover image validation schema
+export const coverImageSchema = z.object({
+  url: z.string().url("Must be a valid URL"),
+  prompt: z.string().min(1, "Prompt is required"),
+  style: z.string().optional(),
+  generatedAt: z.string().datetime(),
+  attribution: z.string().default("AI Generated with DALL-E 3"),
+}).nullable().optional();
 
 export const insertPlatformSchema = createInsertSchema(platforms).omit({
   id: true,
@@ -45,6 +62,8 @@ export const insertPostSchema = createInsertSchema(posts).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  coverImage: coverImageSchema,
 });
 
 export type InsertPlatform = z.infer<typeof insertPlatformSchema>;

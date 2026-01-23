@@ -1,9 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPostSchema } from "@shared/schema";
+import { insertPostSchema, hashtagSuggestionSchema } from "@shared/schema";
 import { z } from "zod";
 import * as aiService from "./ai-service";
+import { hashtagService } from "./hashtag-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Platform routes
@@ -246,18 +247,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Adjust tone
-  app.post("/api/ai/adjust-tone", async (req, res) => {
-    if (!aiService.isAIEnabled()) {
+  // Hashtag Intelligence endpoints
+  // Save hashtag suggestions for a post
+  app.post("/api/hashtags/suggestions", async (req, res) => {
+    if (!hashtagService.isEnabled()) {
       return res.status(503).json({ 
-        message: "AI features are not enabled. Configure GEMINI_API_KEY and set AI_FEATURES_ENABLED=true." 
+        message: "Hashtag service is not enabled. Configure MONGODB_URL to enable." 
       });
     }
 
     try {
-      const validatedData = aiService.adjustToneSchema.parse(req.body);
-      const result = await aiService.adjustTone(validatedData);
-      res.json(result);
+      const validatedData = hashtagSuggestionSchema.parse(req.body);
+      const result = await hashtagService.saveSuggestions(validatedData);
+      
+      if (!result) {
+        return res.status(500).json({ message: "Failed to save hashtag suggestions" });
+      }
+      
+      res.status(201).json(result);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ 
@@ -265,165 +272,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
           errors: error.errors 
         });
       }
-      console.error("Adjust tone error:", error);
+      console.error("Save hashtag suggestions error:", error);
       res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to adjust tone" 
+        message: error instanceof Error ? error.message : "Failed to save hashtag suggestions" 
       });
     }
   });
 
-  // Check grammar
-  app.post("/api/ai/check-grammar", async (req, res) => {
-    if (!aiService.isAIEnabled()) {
+  // Get hashtag suggestions by post ID
+  app.get("/api/hashtags/suggestions/:postId", async (req, res) => {
+    if (!hashtagService.isEnabled()) {
       return res.status(503).json({ 
-        message: "AI features are not enabled. Configure GEMINI_API_KEY and set AI_FEATURES_ENABLED=true." 
+        message: "Hashtag service is not enabled. Configure MONGODB_URL to enable." 
       });
     }
 
     try {
-      const validatedData = aiService.checkGrammarSchema.parse(req.body);
-      const result = await aiService.checkGrammar(validatedData);
-      res.json(result);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Invalid request data", 
-          errors: error.errors 
-        });
+      const suggestions = await hashtagService.getSuggestionsByPost(req.params.postId);
+      
+      if (!suggestions) {
+        return res.status(404).json({ message: "No suggestions found for this post" });
       }
-      console.error("Check grammar error:", error);
+      
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Get hashtag suggestions error:", error);
       res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to check grammar" 
+        message: error instanceof Error ? error.message : "Failed to get hashtag suggestions" 
       });
     }
   });
 
-  // Analyze engagement
-  app.post("/api/ai/analyze-engagement", async (req, res) => {
-    if (!aiService.isAIEnabled()) {
+  // Update hashtag selection status
+  app.put("/api/hashtags/suggestions/:suggestionId/select", async (req, res) => {
+    if (!hashtagService.isEnabled()) {
       return res.status(503).json({ 
-        message: "AI features are not enabled. Configure GEMINI_API_KEY and set AI_FEATURES_ENABLED=true." 
+        message: "Hashtag service is not enabled. Configure MONGODB_URL to enable." 
       });
     }
 
     try {
-      const validatedData = aiService.analyzeEngagementSchema.parse(req.body);
-      const result = await aiService.analyzeEngagement(validatedData);
-      res.json(result);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
+      const { hashtag, selected } = req.body;
+      
+      if (!hashtag || typeof selected !== 'boolean') {
         return res.status(400).json({ 
-          message: "Invalid request data", 
-          errors: error.errors 
+          message: "Invalid request. Requires 'hashtag' (string) and 'selected' (boolean)" 
         });
       }
-      console.error("Analyze engagement error:", error);
+
+      const success = await hashtagService.updateSelection(
+        req.params.suggestionId,
+        hashtag,
+        selected
+      );
+      
+      if (!success) {
+        return res.status(500).json({ message: "Failed to update hashtag selection" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Update hashtag selection error:", error);
       res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to analyze engagement" 
+        message: error instanceof Error ? error.message : "Failed to update hashtag selection" 
       });
     }
   });
 
-  // Generate headline
-  app.post("/api/ai/generate-headline", async (req, res) => {
-    if (!aiService.isAIEnabled()) {
+  // Get trending hashtags
+  app.get("/api/hashtags/trending", async (req, res) => {
+    if (!hashtagService.isEnabled()) {
       return res.status(503).json({ 
-        message: "AI features are not enabled. Configure GEMINI_API_KEY and set AI_FEATURES_ENABLED=true." 
+        message: "Hashtag service is not enabled. Configure MONGODB_URL to enable." 
       });
     }
 
     try {
-      const validatedData = aiService.generateHeadlineSchema.parse(req.body);
-      const result = await aiService.generateHeadline(validatedData);
-      res.json(result);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Invalid request data", 
-          errors: error.errors 
-        });
+      const { platform, limit } = req.query;
+      
+      // Validate and bound limit to prevent abuse
+      let limitNum = limit ? parseInt(limit as string, 10) : 10;
+      if (isNaN(limitNum) || limitNum < 1) {
+        limitNum = 10;
       }
-      console.error("Generate headline error:", error);
+      if (limitNum > 100) {
+        limitNum = 100;
+      }
+      
+      const trending = await hashtagService.getTrendingHashtags(
+        platform as string,
+        limitNum
+      );
+      
+      res.json({ hashtags: trending });
+    } catch (error) {
+      console.error("Get trending hashtags error:", error);
       res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to generate headline" 
+        message: error instanceof Error ? error.message : "Failed to get trending hashtags" 
       });
     }
   });
 
-  // Generate summary
-  app.post("/api/ai/generate-summary", async (req, res) => {
-    if (!aiService.isAIEnabled()) {
+  // Get hashtag analytics
+  app.get("/api/hashtags/analytics", async (req, res) => {
+    if (!hashtagService.isEnabled()) {
       return res.status(503).json({ 
-        message: "AI features are not enabled. Configure GEMINI_API_KEY and set AI_FEATURES_ENABLED=true." 
+        message: "Hashtag service is not enabled. Configure MONGODB_URL to enable." 
       });
     }
 
     try {
-      const validatedData = aiService.generateSummarySchema.parse(req.body);
-      const result = await aiService.generateSummary(validatedData);
-      res.json(result);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Invalid request data", 
-          errors: error.errors 
-        });
+      const { platform, limit } = req.query;
+      
+      // Validate and bound limit to prevent abuse
+      let limitNum = limit ? parseInt(limit as string, 10) : 20;
+      if (isNaN(limitNum) || limitNum < 1) {
+        limitNum = 20;
       }
-      console.error("Generate summary error:", error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to generate summary" 
-      });
-    }
-  });
-
-  // Generate CTA
-  app.post("/api/ai/generate-cta", async (req, res) => {
-    if (!aiService.isAIEnabled()) {
-      return res.status(503).json({ 
-        message: "AI features are not enabled. Configure GEMINI_API_KEY and set AI_FEATURES_ENABLED=true." 
-      });
-    }
-
-    try {
-      const validatedData = aiService.generateCTASchema.parse(req.body);
-      const result = await aiService.generateCTA(validatedData);
-      res.json(result);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Invalid request data", 
-          errors: error.errors 
-        });
+      if (limitNum > 100) {
+        limitNum = 100;
       }
-      console.error("Generate CTA error:", error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to generate CTA" 
-      });
-    }
-  });
-
-  // Optimize post
-  app.post("/api/ai/optimize-post", async (req, res) => {
-    if (!aiService.isAIEnabled()) {
-      return res.status(503).json({ 
-        message: "AI features are not enabled. Configure GEMINI_API_KEY and set AI_FEATURES_ENABLED=true." 
-      });
-    }
-
-    try {
-      const validatedData = aiService.optimizePostSchema.parse(req.body);
-      const result = await aiService.optimizePost(validatedData);
-      res.json(result);
+      
+      const analytics = await hashtagService.getHashtagAnalytics(
+        platform as string,
+        limitNum
+      );
+      
+      res.json({ analytics });
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Invalid request data", 
-          errors: error.errors 
-        });
-      }
-      console.error("Optimize post error:", error);
+      console.error("Get hashtag analytics error:", error);
       res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to optimize post" 
+        message: error instanceof Error ? error.message : "Failed to get hashtag analytics" 
       });
     }
   });

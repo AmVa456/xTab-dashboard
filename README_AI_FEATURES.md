@@ -5,11 +5,53 @@ This document covers the complete AI Features Suite for xTab Dashboard, includin
 ## 🚀 Key Features
 
 1. **AI-Powered Post Composer** - Generate creative content with no restrictions
-2. **Visual Content Generator** - Real AI images via DALL-E 3 (unfiltered)
+2. **Visual Content Generator** - Real AI images via DALL-E 3 with advanced workflow (unfiltered)
 3. **Content Inspiration Feed** - AI-powered suggestions and trends
 4. **Hashtag Intelligence** - Smart hashtag recommendations
 
 All features operate **without content filtering** for maximum creative freedom.
+
+---
+
+# Visual Content Generator - Enhanced UI
+
+## 🎨 What's New in Visual Content Generator
+
+The Visual Content Generator now includes a comprehensive image generation workflow:
+
+### Enhanced Features
+
+1. **Advanced Image Generation Interface**
+   - Custom prompts or auto-generation from post content
+   - 8 professional style presets (Modern, Minimalist, Vibrant, Dark, etc.)
+   - Interactive gallery with multiple image variations
+   - Visual selection with real-time preview
+
+2. **Image Management**
+   - Generate multiple images and compare
+   - Select/deselect with visual feedback
+   - Remove unwanted images from gallery
+   - Persistent selection when editing posts
+
+3. **Metadata Storage**
+   - Images stored in database with posts
+   - Includes prompt, style, generation timestamp
+   - AI attribution displayed on all images
+   - Full metadata for auditing and optimization
+
+4. **Smart Integration**
+   - Seamlessly integrated into Post Composer
+   - Auto-saves with post creation/updates
+   - Pre-loads existing images when editing
+   - Sample prompts for quick start
+
+### Usage
+
+See the [Visual Content Generator Guide](docs/VISUAL_CONTENT_GENERATOR.md) for:
+- Detailed usage instructions
+- Sample prompts and best practices
+- Style selection guide
+- Troubleshooting tips
 
 ---
 

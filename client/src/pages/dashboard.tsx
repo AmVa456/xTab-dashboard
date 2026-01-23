@@ -5,7 +5,8 @@ import StatsCards from "@/components/dashboard/stats-cards";
 import PostsTable from "@/components/dashboard/posts-table";
 import RecentActivity from "@/components/dashboard/recent-activity";
 import QuickActions from "@/components/dashboard/quick-actions";
-import AIPostComposer from "@/components/forms/ai-post-composer";
+import TrendingHashtags from "@/components/dashboard/trending-hashtags";
+import PostForm from "@/components/forms/post-form";
 import AIAssistant from "@/components/dashboard/ai-assistant";
 import StaticModeBanner from "@/components/dashboard/static-mode-banner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -96,8 +97,11 @@ export default function Dashboard() {
                 <div className="lg:col-span-2">
                   <RecentActivity />
                 </div>
-                <div>
+                <div className="space-y-6">
                   <QuickActions onCreatePost={handleCreatePost} />
+                  {aiStatus?.enabled && (
+                    <TrendingHashtags />
+                  )}
                 </div>
               </div>
             </div>

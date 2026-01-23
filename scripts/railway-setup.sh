@@ -33,7 +33,7 @@ echo ""
 
 # Generate SESSION_SECRET
 SESSION_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
-echo "Generated SESSION_SECRET: $SESSION_SECRET"
+echo "Generated secure SESSION_SECRET (hidden for security)"
 
 # Set required environment variables
 echo "Setting NODE_ENV=production..."

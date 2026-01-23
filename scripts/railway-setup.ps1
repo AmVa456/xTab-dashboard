@@ -30,14 +30,14 @@ Write-Host ""
 
 # Generate SESSION_SECRET
 $SESSION_SECRET = node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-Write-Host "Generated SESSION_SECRET: $SESSION_SECRET" -ForegroundColor Green
+Write-Host "Generated secure SESSION_SECRET (hidden for security)" -ForegroundColor Green
 
 # Set required environment variables
 Write-Host "Setting NODE_ENV=production..." -ForegroundColor Yellow
 railway variables set NODE_ENV=production
 
 Write-Host "Setting SESSION_SECRET..." -ForegroundColor Yellow
-railway variables set SESSION_SECRET=$SESSION_SECRET
+railway variables set SESSION_SECRET="$SESSION_SECRET"
 
 Write-Host ""
 Write-Host "📊 Current environment variables:" -ForegroundColor Cyan

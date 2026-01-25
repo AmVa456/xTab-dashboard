@@ -10,6 +10,7 @@
     "check": "tsc",
     "db:push": "drizzle-kit push",
     "railway:setup": "bash scripts/railway-setup.sh",
+    "railway:setup:windows": "powershell -File scripts/railway-setup.ps1",
     "railway:deploy": "railway up",
     "railway:logs": "railway logs",
     "railway:migrate": "railway run npm run db:push",

@@ -35,9 +35,6 @@ RUN npm ci --only=production
 # Copy built artifacts from builder stage
 COPY --from=builder /app/dist ./dist
 
-# Copy any other necessary files
-COPY shared ./shared
-
 # Expose port (Railway will override with PORT env var)
 EXPOSE 5000
 

@@ -4,6 +4,40 @@ import { setupVite, serveStatic, log } from "./vite";
 import { cacheService } from "./cache-service";
 import { hashtagService } from "./hashtag-service";
 
+// Validate required environment variables
+function validateEnvironment() {
+  const requiredEnvVars = ['DATABASE_URL', 'SESSION_SECRET'];
+  const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+  
+  if (missingEnvVars.length > 0) {
+    console.error(`❌ Missing required environment variables: ${missingEnvVars.join(', ')}`);
+    console.error('');
+    console.error('Please set these variables:');
+    console.error('  - In Railway: Go to your service → Variables tab');
+    console.error('  - Locally: Create a .env file with the required variables');
+    console.error('');
+    console.error('Required variables:');
+    console.error('  DATABASE_URL: PostgreSQL connection string');
+    console.error('  SESSION_SECRET: Random secret key (at least 32 characters)');
+    console.error('');
+    console.error('To generate a SESSION_SECRET, run:');
+    console.error('  node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+    process.exit(1);
+  }
+  
+  // Validate NODE_ENV is set (warn if not, don't fail)
+  if (!process.env.NODE_ENV) {
+    console.warn('⚠️  Warning: NODE_ENV is not set. Defaulting to development mode.');
+  }
+  
+  log('✅ Environment variables validated successfully');
+}
+
+// Run validation in production or when DATABASE_URL is expected
+if (process.env.NODE_ENV === 'production' || process.env.DATABASE_URL) {
+  validateEnvironment();
+}
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

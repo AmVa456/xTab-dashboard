@@ -53,6 +53,21 @@ Railway is a modern Platform-as-a-Service (PaaS) that makes deployment straightf
    - Generate a `DATABASE_URL` environment variable
    - Link it to your application
 
+## Troubleshooting
+
+Railway will need the following environment variables. Click on your application service, then go to the **"Variables"** tab:
+
+**Having issues?** See the comprehensive [Railway Troubleshooting Guide](./RAILWAY_TROUBLESHOOTING.md) for detailed solutions to common problems.
+
+### Common Issues Quick Links
+
+- **[Missing Environment Variables](./RAILWAY_TROUBLESHOOTING.md#environment-variables)** - How to set required variables
+- **[Module Resolution Errors](./RAILWAY_TROUBLESHOOTING.md#module-resolution-errors)** - Fix "Cannot find module" errors
+- **[Database Connection Issues](./RAILWAY_TROUBLESHOOTING.md#database-issues)** - Database won't connect or migrations fail
+- **[Build Failures](./RAILWAY_TROUBLESHOOTING.md#build-failures)** - Build process errors
+- **[Health Check Failures](./RAILWAY_TROUBLESHOOTING.md#health-check-failures)** - /api/health returns errors
+- **[Application Crashes](./RAILWAY_TROUBLESHOOTING.md#runtime-errors)** - App crashes after startup
+
 ### 3. Configure Environment Variables
 
 Railway will need the following environment variables. Click on your application service, then go to the **"Variables"** tab:
@@ -192,7 +207,11 @@ To force Docker builds:
 
 ## Troubleshooting
 
-### Application won't start
+For detailed troubleshooting steps and solutions to common issues, see the **[Railway Troubleshooting Guide](./RAILWAY_TROUBLESHOOTING.md)**.
+
+### Quick Troubleshooting
+
+#### Application won't start
 
 **Check logs:**
 1. Go to your Railway project
@@ -201,10 +220,13 @@ To force Docker builds:
 
 **Common issues:**
 - Missing `DATABASE_URL`: Make sure PostgreSQL is added and linked
+- Missing `SESSION_SECRET`: Generate and set in Variables tab
 - Port binding: Railway automatically sets `PORT` - don't override it
 - Build failures: Check that all dependencies are in `package.json`
 
-### Database connection errors
+**For detailed solutions:** See [Application Crashes](./RAILWAY_TROUBLESHOOTING.md#common-deployment-errors)
+
+#### Database connection errors
 
 **Verify:**
 - PostgreSQL service is running in your Railway project
@@ -217,18 +239,22 @@ To force Docker builds:
 railway run npm run db:push
 ```
 
-### Build timeouts
+**For detailed solutions:** See [Database Issues](./RAILWAY_TROUBLESHOOTING.md#database-issues)
 
-If your build is timing out:
-1. Check the build logs for specific errors
-2. Ensure your `package.json` scripts are correct
-3. Try reducing dependencies or optimizing build steps
+#### Module resolution errors
 
-### Environment variable not updating
+**If you see "Cannot find module" errors:**
+- This should be fixed in the current version (shared code is bundled)
+- Verify the build completed successfully
+- See [Module Resolution Errors](./RAILWAY_TROUBLESHOOTING.md#module-resolution-errors) for detailed fixes
 
-After changing environment variables:
-1. You may need to **redeploy** the application
-2. Click **"Deploy"** → **"Redeploy"** in Railway dashboard
+---
+
+**Need more help?** Check the comprehensive [Railway Troubleshooting Guide](./RAILWAY_TROUBLESHOOTING.md) for:
+- Step-by-step debugging procedures
+- Common error messages and their solutions
+- How to verify your deployment is working correctly
+- Advanced troubleshooting techniques
 
 ## Monitoring and Logs
 
